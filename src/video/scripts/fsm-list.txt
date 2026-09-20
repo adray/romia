@@ -1,0 +1,7 @@
+
+setContentType("text/json");
+
+var fsm = listFSM();
+write(fsm);
+
+

@@ -1,0 +1,11 @@
+
+setContentType("text/json");
+
+var result = rejectGroup();
+
+if (result == 1) {
+    writeOK();
+} else {
+    writeError();
+}
+

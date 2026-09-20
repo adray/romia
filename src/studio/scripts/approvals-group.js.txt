@@ -1,0 +1,43 @@
+
+
+setContentType("text/javascript");
+
+var template = "'use strict';" +
+    "function loadGroup() {" +
+        "fetch('/api/group')" +
+        ".then(function (r) {" +
+                "return r.json();" +
+            "})" +
+        ".then(function (j) {" +
+                "setImage('#frame-image1', j.left);" +
+                "setImage('#frame-image2', j.right);" +
+            "})" +
+    "}" +
+    "$(function() {" +
+        "loadGroup();" +
+    "});" + 
+    "function setImage(img, r) {" +
+        "var url = '/image/' + encodeURIComponent(r.video) + '/' + encodeURIComponent(r.frame);" +
+        "$(img).attr('src', url);" +
+    "}" +
+    "$('#approve-btn').on('click', function(e) {" +
+        "e.preventDefault();" +
+        "fetch('/api/group/approve').then(function (res) { return res.json; })" +
+        ".then(function (j) {" +
+            "console.log('approved');" +
+            "loadGroup();" +
+        "})" +
+    "});" +
+    "$('#reject-btn').on('click', function(e) {" +
+        "e.preventDefault();" +
+        "fetch('/api/group/reject').then(function (res) { return res.json; })" +
+        ".then(function (j) {" +
+            "console.log('rejected');" +
+            "loadGroup();" +
+        "})" +
+    "});"
+    ;
+
+
+write(template);
+

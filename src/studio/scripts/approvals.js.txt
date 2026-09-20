@@ -1,0 +1,74 @@
+
+setContentType("text/javascript");
+
+var template = "'use strict';" +
+    "var frame = 0;" +
+    "function prevFrame() { frame--; if (frame < 0) { frame=0;} refresh(); }" +
+    "function nextFrame() { frame++; if (frame >= numFrames) {frame=numFrames-1;} refresh(); }" +
+    "function refresh() { loadImage(); setAutoApproval(); loadFrame(); }" +
+    "function loadImage() { var url = '/image/' + encodeURIComponent(videoName) + '/' + encodeURIComponent(frames[frame]);" +
+        "$('#frame-image').attr('src', url);" +
+        "$('#frame-text').text('Video Frame ' + (frame+1) + '/' + numFrames);" +
+    "}" +
+    "function setAutoApproval() {" +
+        "var text = 'Manual approval';" +
+        "if (autoApprovals[frame]) { text = 'Auto approved.'; }" +
+        "else if (approvals[frame]) { text = 'Approved.'; }" +
+        "$('#auto-approval').text(text);" +
+    "}" +
+    "$(function() {" +
+        "$('#prev-btn').on('click', function(e) { e.preventDefault(); prevFrame(); });" +
+        "$('#next-btn').on('click', function(e) { e.preventDefault(); nextFrame(); });" +
+        "loadVideoData();" +
+        "refresh();" + // load initial frame on page ready
+    "});" +
+    "function loadFrame() {" +
+        "if (videoData !== undefined) {" +
+            "$('#video-data').val(JSON.stringify(videoData[frame]));" +
+        "}" +
+    "}" +
+    "function loadVideoData() {" +
+        "fetch('/api/video/' + encodeURIComponent(videoId))" +
+        ".then(function(res) {" +
+            "return res.json();" +
+        "})" +
+        ".then(function(data) {" +
+            "videoData = data;" +
+            "loadFrame();" +
+        "})" +
+        ".catch(function(err) { console.error('Failed to load video data', err); });" +
+    "}" +
+    "function submitFrameData() {" +
+        "var payload = $('#video-data').val();" +
+        "return fetch('/api/approve/' + encodeURIComponent(videoId) + '/' + encodeURIComponent(frame), {" +
+            "method: 'POST'," +
+            "headers: { 'Content-Type': 'application/json' }," +
+            "body: payload" +
+        "})" +
+        ".then(function(res) {" +
+            "if (!res.ok) { throw new Error('Save failed: ' + res.status); }" +
+            "return res.json();" +
+        "});" +
+    "}" +
+    "$('#approve-btn').on('click', function(e) {" +
+        "e.preventDefault();" +
+        "$('#approve-btn').prop('disabled', true);" +
+        "submitFrameData()" +
+            ".then(function(result) {" +
+                "console.log('Saved', result);" +
+                "approvals[frame] = true;" +
+                "videoData[frame] = JSON.parse($('#video-data').val());" +
+                "nextFrame();" +
+            "})" +
+            ".catch(function(err) {" +
+                "console.error(err);" +
+                "alert('Failed to save frame data.');" +
+            "})" +
+            ".finally(function() {" +
+                "$('#approve-btn').prop('disabled', false);" +
+            "});" +
+    "});"
+    ;
+
+write(template);
+

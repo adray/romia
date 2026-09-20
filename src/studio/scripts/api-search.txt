@@ -1,0 +1,8 @@
+
+setContentType("text/json");
+
+var searchTerm = getArg("term");
+
+var results = search(searchTerm);
+write(results);
+

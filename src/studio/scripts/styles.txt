@@ -1,0 +1,12 @@
+
+setContentType("text/css");
+
+write("body {");
+write("padding-top: 5rem;");
+write("}");
+
+write(".starter-template {");
+write("padding: 3rem 1.5rem;");
+write("text-align: center;");
+write("}");
+

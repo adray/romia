@@ -1,0 +1,16 @@
+
+
+setContentType("text/json");
+
+
+var video = getArgInt("video");
+var frame = getArgInt("frame");
+var json = getBody();
+//debugPrint(json);
+var result = approveFrame(video, frame, json);
+
+if (result == 1) {
+    writeOK();
+} else {
+    writeError();
+}

@@ -1,0 +1,8 @@
+
+
+setContentType("text/json");
+
+var id = getArgInt("id");
+
+var json = getVideoJson(id);
+write(json);

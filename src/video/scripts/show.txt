@@ -1,0 +1,7 @@
+
+setContentType("text/json");
+
+var id = getArgInt("id");
+var show = getShow(id);
+write(show);
+

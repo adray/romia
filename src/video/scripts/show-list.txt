@@ -1,0 +1,6 @@
+
+setContentType("text/json");
+
+var shows = listShows();
+write(shows);
+

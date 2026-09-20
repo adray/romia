@@ -1,0 +1,40 @@
+
+
+setContentType("text/html");
+
+write("<!doctype html>");
+write("<html lang='en'>");
+write("<head>");
+write("<meta charset='utf-8'>");
+write("<meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no' >");
+write("<link rel='stylesheet' href='/css/bootstrap.css'/>");
+write("<link rel='stylesheet' href='/styles.css'/>");
+write("</head>");
+write("<body>");
+
+include("scripts/menu.txt");
+
+write("<main role='main' class='container'>");
+write("<div class='starter-template'>");
+
+var numFiles = getNumFilesToApprove();
+
+write("<h1>Welcome back.</h1>");
+
+write("<p class='lead' />");
+if (numFiles == 0) {
+    write("No files to approve.");
+} else {
+    write(numFiles + " file(s) to approve.");
+}
+write("</p>");
+
+
+write("</div>");
+write("</main>");
+
+write("<script src='/jquery/jquery-3.7.1.slim.min.js'></script>");
+write("<script src='/js/bootstrap.bundle.js'></script>");
+
+write("</body>");
+write("</html>");

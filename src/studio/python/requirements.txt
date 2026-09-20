@@ -1,0 +1,8 @@
+
+imagehash
+Pillow
+torch
+numpy
+transformers
+scikit-learn
+mediapipe

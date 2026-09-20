@@ -1,0 +1,9 @@
+
+
+setContentType("text/json");
+
+
+var json = getGroup();
+write(json);
+
+

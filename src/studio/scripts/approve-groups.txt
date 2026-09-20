@@ -1,0 +1,54 @@
+setContentType("text/html");
+
+write("<!doctype html>");
+write("<html lang='en'>");
+write("<head>");
+write("<meta charset='utf-8'>");
+write("<meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no' >");
+write("<link rel='stylesheet' href='/css/bootstrap.css'/>");
+write("<link rel='stylesheet' href='/styles.css'/>");
+write("</head>");
+write("<body>");
+
+include("scripts/menu.txt");
+
+var groupIndex = 1;
+if (hasArg("id") == 1) {
+    groupIndex = getArgInt("id");
+}
+
+
+write("<main role='main' class='container'>");
+write("<div class='row'>");
+write("<div class='col-md-8'>");
+write("<p><img id='frame-image1'></img></p>");
+write("<p><img id='frame-image2'></img></p>");
+write("</div>");
+
+write("<aside  class='col-md-4 blog-sidebar'>");
+write("<p id='auto-approval'></p>");
+write("<form>");
+write("<div class='input-group'>");
+write("<div class='input-group-prepend'>");
+write("</div>");
+write("</div>");
+write("<p><a id='approve-btn' type='submit' class='btn btn-primary' href='#' role='button'>Approve</a></p>");
+write("<p><a id='reject-btn' type='submit' class='btn btn-primary' href='#' role='button'>Reject</a></p>");
+write("<form>");
+write("</aside>");
+
+write("</div>");
+write("</main>");
+
+write("<script lang='text/javascript'>");
+write("var id = " + groupIndex + ";");
+write("</script>");
+
+write("<script src='/jquery/jquery-3.7.1.slim.min.js'></script>");
+write("<script src='/js/bootstrap.bundle.js'></script>");
+write("<script src='/groups.js'></script>");
+
+
+write("</body>");
+write("</html>");
+

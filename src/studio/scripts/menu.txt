@@ -1,0 +1,32 @@
+
+write("<nav class='navbar navbar-expand-md navbar-dark bg-dark fixed-top'>");
+
+write("<a class='navbar-brand' href='#'>Romia Studio</a>");
+
+// Menu burger button
+write("<button class='navbar-toggler' type='button' data-toggle='collapse' data-target='#navbarsExampleDefault' aria-controls='navbarsExampleDefault' aria-expanded='false' aria-label='Toggle navigation'>");
+write("<span class='navbar-toggler-icon'></span>");
+write("</button>");
+
+function writeNavButton(name, url) {
+    write("<li class='nav-item active'>");
+    write("    <a class='nav-link' href='" + url + "'>" + name + "<span class='sr-only'>(current)</span></a>");
+    write("</li>");
+}
+
+// Nav items
+write("<div class='collapse navbar-collapse' id='navbarsExampleDefault'>");
+write("<ul class='navbar-nav mr-auto'>");
+writeNavButton("Home", "/");
+writeNavButton("Approvals", "/approvals/1");
+writeNavButton("Groups", "/approvals-groups");
+
+write("      <form class='form-inline mt-2 mt-md-0' action='/search' method='get'>");
+write("        <input class='form-control mr-sm-2' type='text' name='q' placeholder='Search' aria-label='Search'>");
+write("        <button class='btn btn-outline-success my-2 my-sm-0' type='submit'>Search</button>");
+write("      </form>");
+
+write("</ul>");
+write("</div>");
+
+write("</nav>");

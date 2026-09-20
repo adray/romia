@@ -1,0 +1,105 @@
+
+
+setContentType("text/html");
+
+write("<!doctype html>");
+write("<html lang='en'>");
+write("<head>");
+write("<meta charset='utf-8'>");
+write("<meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no' >");
+write("<link rel='stylesheet' href='/css/bootstrap.css'/>");
+write("<link rel='stylesheet' href='/styles.css'/>");
+write("</head>");
+write("<body>");
+
+include("scripts/menu.txt");
+
+
+var numFiles = getNumVideos();
+var videoIndex = 1;
+if (hasArg("id") == 1) {
+    videoIndex = getArgInt("id");
+}
+
+if (videoIndex >= 1 && videoIndex <= numFiles) {
+    var videoName = getFileToApprove(videoIndex - 1);
+    
+
+    write("<main role='main' class='container'>");
+    write("<h1>" + videoName + "</h1>");
+    write("<div class='row'>");
+    write("<div class='col-md-8'>");
+    write("<p id='frame-text'>Video Frame</p>");
+    write("<p><img id='frame-image'></img></p>");
+
+    write("<a id='prev-btn' class='btn btn-secondary' href='#' role='button'>Previous</a>");
+    write("<a id='next-btn' class='btn btn-secondary' href='#' role='button'>Next</a>");
+    write("</div>");
+
+    write("<aside  class='col-md-4 blog-sidebar'>");
+    write("<p id='auto-approval'></p>");
+    write("<form>");
+    write("<div class='input-group'>");
+    write("<div class='input-group-prepend'>");
+    write("<span class='input-group-text'>JSON</span>");
+    write("</div>");
+    write("<textarea id='video-data' class='form-control' aria-label='json'></textarea>");
+    write("</div>");
+    write("<a id='approve-btn' type='submit' class='btn btn-primary' href='#' role='button'>Approve</a>");
+    write("<form>");
+    write("</aside>");
+
+    write("</div>");
+    write("</main>");
+}
+
+
+write("<script src='/jquery/jquery-3.7.1.slim.min.js'></script>");
+write("<script src='/js/bootstrap.bundle.js'></script>");
+write("<script src='/approvals.js'></script>");
+
+
+if (videoIndex >= 1 && videoIndex <= numFiles) {
+    var videoName = getFileToApprove(videoIndex - 1);
+    var numFrames = getFramesToApprove(videoIndex - 1);
+
+    write("<script lang='text/javascript'>");
+    write("var videoData;");
+    write("var videoId='" + (videoIndex-1) + "';");
+    write("var videoName='" + videoName + "';");
+    write("var numFrames=" + numFrames + ";");
+    write("var frames=[");
+    for (var i = 0; i < numFrames; i++) {
+        var filename = getFrameFilename(videoIndex - 1, i);
+
+        write("'" + filename + "'" + ",");
+    }
+    write("];");
+
+    write("var autoApprovals=[");
+    for (var i = 0; i < numFrames; i++) {
+        var isAutoApproved =   isAutoApproved(videoIndex - 1, i);
+        if (isAutoApproved == 1) {
+            write("true,");
+        } else {
+            write("false,");
+        }
+    }
+    write("];");
+
+    write("var approvals=[");
+    for (var i = 0; i < numFrames; i++) {
+        var isApproved =   isApproved(videoIndex - 1, i);
+        if (isApproved == 1) {
+            write("true,");
+        } else {
+            write("false,");
+        }
+    }
+    write("];");
+    
+    write("</script>");
+}
+
+write("</body>");
+write("</html>");

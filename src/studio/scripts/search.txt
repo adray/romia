@@ -1,0 +1,35 @@
+
+setContentType("text/html");
+
+write("<!doctype html>");
+write("<html lang='en'>");
+write("<head>");
+write("<meta charset='utf-8'>");
+write("<meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no' >");
+write("<link rel='stylesheet' href='/css/bootstrap.css'/>");
+write("<link rel='stylesheet' href='/styles.css'/>");
+write("</head>");
+write("<body>");
+
+include("scripts/menu.txt");
+
+
+write("<main role='main' class='container'>");
+//write("<div class='starter-template'>");
+
+write("<form class='form-inline mt-2 mt-md-0' action='/search' method='get'>");
+write("<input id='search-input' class='form-control mr-sm-2' type='text' name='q' placeholder='Search' aria-label='Search'>");
+write("<button class='btn btn-outline-success my-2 my-sm-0' type='submit'>Search</button>");
+write("</form>");
+write("<div id='results'></div>");
+
+//write("</div>");
+write("</main>");
+
+write("<script src='/jquery/jquery-3.7.1.slim.min.js'></script>");
+write("<script src='/js/bootstrap.bundle.js'></script>");
+write("<script src='/search.js'></script>");
+
+write("</body>");
+write("</html>");
+

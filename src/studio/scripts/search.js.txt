@@ -1,0 +1,31 @@
+
+setContentType("text/javascript");
+var template = "'use strict';" +
+    "function getQueryParam(name) {" +
+        "var params = new URLSearchParams(window.location.search);" +
+        "return params.get(name);" +
+    "}" +
+    "function runSearch() {" +
+        "var term = getQueryParam('q');" +
+        "if (!term) { return; }" +
+        "$('#search-input').val(term);" + // reflect the term back into the search box on this page
+        "fetch('/api/search/' + encodeURIComponent(term))" +
+            ".then(function(res) {" +
+                "if (!res.ok) { throw new Error('Search failed: ' + res.status); }" +
+                "return res.json();" +
+            "})" +
+            ".then(function(results) { renderResults(results); })" +
+            ".catch(function(err) {" +
+                "console.error(err);" +
+                "$('#results').html('<p>Search failed. Please try again.</p>');" +
+            "});" +
+    "}" +
+    "function renderResults(results) {" +
+        "var html = results.map(function(r) {" +
+            "return '<div>' + r.video + ' ' + r.frame + ' ' + r.clothing + '</div>';" + // adjust to your result shape
+        "}).join('');" +
+        "$('#results').html(html || '<p>No results found.</p>');" +
+    "}" +
+    "$(function() { runSearch(); });";
+write(template);
+//class='result-item'

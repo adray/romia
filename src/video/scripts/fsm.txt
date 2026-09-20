@@ -1,0 +1,6 @@
+
+setContentType("text/json");
+
+var id = getArgInt("id");
+var fsm = getFSM(id);
+write(fsm);
