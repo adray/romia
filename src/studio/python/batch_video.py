@@ -41,6 +41,9 @@ def generate_jobs(base_prompt, clips):
             "prompt": prompt,
             "workflow": clip["workflow"],
             "category": clip["category"],
+            "action": clip["action"],
+            "emotion": clip["emotion"],
+            "speaking": clip.get("speaking"),
             "state": "pending",
             "client_id": str(uuid.uuid4()),
         })
@@ -294,7 +297,10 @@ def main():
                 for video in job["output"]:
                     metadata[video] = {
                         "prompt": job["prompt"],
-                        "category": job.get("category", "")
+                        "category": job.get("category", ""),
+                        "emotion": job.get("emotion", ""),
+                        "speaking": job.get("speaking", False),
+                        "action": job.get("action", ""),
                     }
             save_jobs(jobs, output_directory)
             save_clip_metadata(metadata, metadata_path)

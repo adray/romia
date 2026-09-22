@@ -2,7 +2,7 @@
 Run the face landmarker in the frames.
 
 Usage:
-    python face_landmarker.py --root-dir ./Frames
+    python face_landmarker.py --root-dir ~/.AI/Frames
 """
 
 import argparse

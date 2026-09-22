@@ -4,11 +4,18 @@
 Analyze the faces in the frames.
 
 Usage:
-    python analyze_faces.py --file faces.json
+    python analyze_faces.py --model-dir
+    or probing a specific subject using the --probe argument.
+    python analyze_faces.py --model-dir <model_dir> --probe <subject_id>
 """
 
 import argparse
 import json
+import pickle
+import os
+import sklearn
+import numpy as np
+from pathlib import Path
 
 def extract_blendshapes(blendshapes):
     result = {}
@@ -66,29 +73,90 @@ def analyze_faces(faces):
         annoyed = calculate_annoyed(blendshapes)
         print(f"{image} Smile:{smile} Frown:{frown} JawOpen:{jaw_open} Annoyed:{annoyed} MouthClosed:{mouth_closed} Undetected:{undetected}")
 
-def probe_face(faces, probe):
+def load_model(model_dir, model_filename):
+    model_path = os.path.join(model_dir, model_filename)
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
+    return model
+
+def evaluate_model(clip_average, clip_min, clip_max, model):
+    input_data = np.array([clip_average + clip_min + clip_max])
+    predictions = model.predict(input_data)
+    return predictions
+
+def probe_face(faces, probe, model_dir):
+    model = load_model(model_dir, "face_model.pkl")
+    num_features = 52
+    num_images = 5
+    clip_average = [0] * num_features
+    clip_min = [1] * num_features
+    clip_max = [0] * num_features
     for face in faces:
         image = face["image"]
         result = face["result"]
-        if image == probe:
-            blendshapes = extract_blendshapes(result["face_blendshapes"])
-            for key, value in blendshapes.items():
-                print(f"{key}: {value}")
+        image_dir = Path(image).parent.name
+        if image_dir == probe:
+            blendshapes = result["face_blendshapes"]
+            for blendshape in blendshapes:
+                index = blendshape.get("index")
+                value = blendshape.get("score")
+                clip_average[index] = clip_average[index] / num_images
+                clip_min[index] = min(clip_min[index], value)
+                clip_max[index] = max(clip_max[index], value)
+    for key in range(num_features):
+        clip_average[key] = clip_average[key] / num_images
+
+    predictions = evaluate_model(clip_average, clip_min, clip_max, model)
+    print(f"Face Predictions: {predictions}")
+
+def probe_pose(poses, probe, model_dir):
+    model = load_model(model_dir, "pose_model.pkl")
+    num_features = 33
+    num_images = 5
+    clip_average = [0] * num_features
+    clip_min = [1] * num_features
+    clip_max = [0] * num_features
+    for pose in poses:
+        image = pose["image"]
+        result = pose["result"]
+        image_dir = Path(image).parent.name
+        if image_dir == probe:
+            keypoints = result["pose_landmarks"]
+            for landmark in keypoints:
+                x = landmark.get("x")
+                y = landmark.get("y")
+                z = landmark.get("z")
+                visibility = landmark.get("visibility")
+                presence = landmark.get("presence")
+                value = [x, y, z, visibility, presence]
+                for i, v in enumerate(value):
+                    clip_average[i] = clip_average[i] + v / num_images
+                    clip_min[i] = min(clip_min[i], v)
+                    clip_max[i] = max(clip_max[i], v)
+    for key in range(num_features):
+        clip_average[key] = clip_average[key] / num_images
+
+    predictions = evaluate_model(clip_average, clip_min, clip_max, model)
+    print(f"Pose Predictions: {predictions}")
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--file", type=str, default="faces.json", help="Path to the faces.json")
-    ap.add_argument("--probe", type=str, help="Optional video path to probe")
+    ap.add_argument("--model-dir", type=str, help="Path to the model directory containing the .keras file")
+    ap.add_argument("--probe", type=str, help="Optional video to probe")
     ap.add_argument("-out-json", type=str, default="states.json", help="Path to write states.json")
     args = ap.parse_args()
 
     faces = []
-    with open(args.file, "r") as f:
+    with open(os.path.join(args.model_dir, "faces.json"), "r") as f:
         faces = json.load(f)
+    poses = []
+    with open(os.path.join(args.model_dir, "poses.json"), "r") as f:
+        poses = json.load(f)
     if args.probe is None:
         analyze_faces(faces)
     else:
-        probe_face(faces, args.probe)
+        probe_face(faces, args.probe, args.model_dir)
+        probe_pose(poses, args.probe, args.model_dir)
 
 if __name__ == "__main__":
     main()
