@@ -111,7 +111,7 @@ Key scripts (see `src/studio/README.md` for the full ordered walkthrough):
 | `analyze_transitions.py` | Build the clip transition graph from those hashes |
 | `embeddings.py` / `cluster_embeddings.py` | CLIP embeddings + clustering of frames |
 | `fsm_groups.py` | Suggest FSM state groupings from the transition graph + embeddings |
-| `face_landmarker.py` / `analyze_landmarks.py` | MediaPipe face/pose landmarking and heuristics |
+| `face_landmarker.py` / `pose_landmarker.py` / `analyze_landmarks.py` | MediaPipe face/pose landmarking and heuristics |
 | `training.py` | Train gradient-boosting emotion/action classifiers from landmark features |
 | `batch_frame_captions.py` / `build_approvals.py` | Caption frames and assemble the human-review approvals file |
 | `remux.py` | Fragment clips for streaming playback |
