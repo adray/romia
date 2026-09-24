@@ -39,18 +39,36 @@ function createFSM(callback) {
                 });
         },
         chooseNextState: function(state) {
+            var candidates = []
+
             if (data.next !== undefined) {
                 data.state = data.next;
                 data.next = undefined;
+                var paths = data.machine[data.state].paths;
+                for (var i = 0; i < paths.length; i++) {
+                    var candidate = { path: i, state: data.state };
+                    candidates.push(candidate);
+                }
             } else {
                 const transitions = state.paths[data.path].transitions;
                 if (transitions !== null && transitions !== undefined && transitions.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * transitions.length);
-                    data.state = transitions[randomIndex];
+                    for (var i = 0; i < transitions.length; i++) {
+                        const state = transitions[i];
+                        var paths = data.machine[state].paths;
+                        for (var j = 0; j < paths.length; j++) {
+                            var candidate = { path: j, state: state };
+                            candidates.push(candidate);
+                        }
+                    }
                 }
             }
-            const paths = data.machine[data.state].paths;
-            data.path = Math.floor(Math.random() * paths.length);
+            
+            if (candidates.length > 0) {
+                var chosen = candidates[Math.floor(Math.random() * candidates.length)];
+                data.state = chosen.state;
+                data.path = chosen.path;
+            }
+
             data.clip = 0;
             data.loop = 0;
         }
