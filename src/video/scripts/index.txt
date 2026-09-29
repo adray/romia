@@ -15,13 +15,14 @@ write("<body>");
 write("<video id='video'></video>");
 write("<div><select id='select-fsms'></select></div>");
 write("<div><select id='select-state'></select></div>");
-write("<div id='div-message'></div>");
+write("<div id='div-timeline'></div>");
 
 write("<script src='/jquery/jquery-3.7.1.slim.min.js'></script>");
 //write("<script src='/js/bootstrap.bundle.js'></script>");
+write("<script src='/js/timeline.js'></script>");
 write("<script src='/js/playback.js'></script>");
 write("<script src='/js/fsm.js'></script>");
-write("<script src='/js/shows.js'></script>");
+write("<script src='/js/event.js'></script>");
 write("<script src='/js/video.js'></script>");
 
 

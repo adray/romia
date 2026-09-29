@@ -113,6 +113,12 @@ function createFSM(callback) {
         getFsm: function() {
             return data.fsms;
         },
+        getCurrentState: function() {
+            return data.state;
+        },
+        getNextState: function() {
+            return data.next;
+        },
         changeFsm: function(id) {
             data.loadFsm(id);
 
@@ -120,6 +126,22 @@ function createFSM(callback) {
             data.path = 0;
             data.clip = 0;
             data.loop = 0;
+        },
+        update: function(state, interrupt) {
+            // look up the state name in the fsm to find the id
+            var fsm = data.machine;
+            var stateId = null;
+            for (var i = 0; i < fsm.length; i++) {
+                if (fsm[i].state === state) {
+                    stateId = i;
+                    break;
+                }
+            }
+
+            if (stateId !== null) {
+                data.next = stateId;
+                data.interrupt = interrupt;
+            }
         }
     };
 }

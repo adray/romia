@@ -125,15 +125,33 @@ static int handler(SunScript::VirtualMachine* vm) {
     } else if (callName == "listFSM" && callArgs == 0) {
         SunScript::PushReturnValue(vm, userData->server->listFSM());
         return SunScript::VM_OK;
-    } else if (callName == "listShows" && callArgs == 0) {
-        SunScript::PushReturnValue(vm, userData->server->listShows());
+    } else if (callName == "uploadAudio" && callArgs == 0) {
+        std::string body = userData->req->body;
+        SunScript::PushReturnValue(vm, userData->server->uploadAudio(body));
         return SunScript::VM_OK;
-    } else if (callName == "getShow" && callArgs == 1) {
-        int id;
-        if (SunScript::GetParamInt(vm, &id) == SunScript::VM_OK) {
-            SunScript::PushReturnValue(vm, userData->server->getShow(id));
+    } else if (callName == "getEventLatest" && callArgs == 0) {
+        SunScript::PushReturnValue(vm, userData->server->getEventLatest());
+        return SunScript::VM_OK;
+    } else if (callName == "getEventNext" && callArgs == 1) {
+        int pos;
+        if (SunScript::GetParamInt(vm, &pos) == SunScript::VM_OK) {
+            SunScript::PushReturnValue(vm, userData->server->getEventNext(pos));
             return SunScript::VM_OK;
         }
+    } else if (callName == "getEventLatest" && callArgs == 0) {
+        SunScript::PushReturnValue(vm, userData->server->getEventLatest());
+        return SunScript::VM_OK;
+    } else if (callName == "postEvent" && callArgs == 0) {
+        json body = json::parse(userData->req->body);
+        roEvent event;
+        event.type = body["type"];
+        if (body.contains("data") && !body["data"].is_null()) {
+            event.data = body["data"];
+        }
+        event.interrupt = body["interrupt"];
+        event.state = body["state"];
+        SunScript::PushReturnValue(vm, userData->server->postEvent(event));
+        return SunScript::VM_OK;
     }
 
     return SunScript::VM_ERROR;
@@ -277,24 +295,6 @@ void roServer::load_custom_fsm() {
     }
 }
 
-std::string roServer::getShow(const int id) const {
-    json show;
-
-    return show.dump();
-}
-
-std::string roServer::listShows() const {
-    json list;
-    json items;
-    json show;
-    show["id"] = 0;
-    show["name"] = "brunettes";
-    items.push_back(show);
-
-    list["default"] = 0;
-    list["items"] = items;
-    return list.dump();
-}
 
 std::string roServer::listFSM() const {
     json list;
@@ -345,3 +345,80 @@ std::string roServer::getFSM(const int id) const {
 }
 
 
+std::string roServer::uploadAudio(const std::string& body) {
+    // Save the uploaded video to the appropriate directory
+    // and return an ID for the uploaded video.
+
+    json response;
+
+    const int id = _audioQueue.tail;
+    _audioQueue.tail++;
+    
+    const std::string audioPath = "audio/audio_" + std::to_string(id);
+    std::fstream file(audioPath, std::ios::out | std::ios::binary);
+    if (file.is_open()) {
+        file.write(body.data(), body.size());
+        file.close();
+    } else {
+        response["status"] = "error";
+        return response.dump();
+    }
+
+    response["audio"] = audioPath;
+    response["status"] = "ok";
+    return response.dump();
+}
+
+
+std::string roServer::postEvent(const roEvent& event){ 
+    if (event.type != "audio" && event.type != "update") {
+        json response;
+        response["status"] = "error";
+        response["message"] = "Invalid event type";
+        return response.dump();
+    }
+
+    if (event.type == "audio" && event.data.empty()) {
+        json response;
+        response["status"] = "error";
+        response["message"] = "Audio event must have data";
+        return response.dump();
+    }
+
+    _events.push_back(event);
+    json response;
+    response["status"] = "ok";
+    return response.dump();
+}
+
+std::string roServer::getEventNext(const int pos) const {
+    int id = pos;
+
+    json response;
+    json events;
+
+    if (id < 0 || id >= static_cast<int>(_events.size())) {
+        return "{\"status\":\"no_new_event\"}"; // No new event
+    }
+    while (id < static_cast<int>(_events.size())) {
+        const auto& event = _events[id];
+        json eventJson;
+        eventJson["type"] = event.type;
+        eventJson["data"] = event.data;
+        eventJson["interrupt"] = event.interrupt;
+        eventJson["state"] = event.state;
+        events.push_back(eventJson);
+        id++;
+    }
+    response["events"] = events;
+    response["next_id"] = id;
+    response["status"] = "ok";
+    return response.dump();
+}
+
+std::string roServer::getEventLatest() const {
+    json response;
+    response["next_id"] = static_cast<int>(_events.size());
+    response["status"] = "ok";
+    return response.dump();
+}

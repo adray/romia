@@ -1,0 +1,6 @@
+
+setContentType("text/json");
+
+var status = postEvent();
+write(status);
+

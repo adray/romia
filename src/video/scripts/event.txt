@@ -1,7 +1,8 @@
 
+
 setContentType("text/json");
 
 var id = getArgInt("id");
-var show = getShow(id);
-write(show);
+var event = getEventNext(id);
+write(event);
 

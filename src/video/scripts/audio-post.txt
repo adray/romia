@@ -1,0 +1,5 @@
+
+setContentType("text/json");
+
+var json = uploadAudio();
+write(json);

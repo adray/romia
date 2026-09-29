@@ -46,6 +46,19 @@ struct roFSM {
     std::vector<roState> states;
 };
 
+struct roAudioQueue {
+    int tail;
+
+    roAudioQueue() : tail(0) {}
+};
+
+struct roEvent {
+    std::string type;
+    std::string data;
+    std::string state;
+    bool interrupt;
+};
+
 class roServer {
     public:
         void start(const int port);
@@ -58,14 +71,20 @@ class roServer {
         void load_graph();
         std::string getFSM(const int id) const;
         std::string listFSM() const;
-        std::string getShow(const int id) const;
-        std::string listShows() const;
+    
+        std::string uploadAudio(const std::string& body);
+
+        std::string postEvent(const roEvent& event);
+        std::string getEventNext(const int pos) const;
+        std::string getEventLatest() const;
 
     private:
 
+        roAudioQueue _audioQueue;
         std::vector<roFSM> _fsms;
         std::vector<roGroup> _groups;
         std::vector<roRoute> _routes;
+        std::vector<roEvent> _events;
         std::vector<roDirectory> _dirs;
         //std::vector<roVideoLibrary> _library;
         std::unordered_map<std::string, int> _map;

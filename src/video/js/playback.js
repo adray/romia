@@ -7,7 +7,10 @@
 function createPlaybackEngine() {
     var data = {
         mediaQueue: [],
+        audioQueue: [],
         mediaSource: new MediaSource(),
+        audioElement: new Audio(),
+        audioPlaying: false,
         sourceBuffer: undefined,
         callback: undefined,
         requestMore: async function () {
@@ -57,7 +60,7 @@ function createPlaybackEngine() {
             if (data.mediaQueue.length > 0 && !data.sourceBuffer.updating) {
                 data.appendClip(data.mediaQueue.shift());
             }
-        }
+        },
     };
 
     return {
@@ -72,9 +75,40 @@ function createPlaybackEngine() {
             data.callback = callback;
             data.mediaSource.addEventListener("sourceopen", data.onSourceOpen);
             data.requestMore();
+
+            video.addEventListener("play", () => {
+                data.audioElement.play().catch((error) => {
+                    console.error("Error playing audio:", error);
+                });
+            });
+            video.addEventListener("pause", () => {
+                data.audioElement.pause();
+            });
+            data.audioElement.addEventListener('ended', () => {
+                data.audioPlaying = false;
+                data.audioElement.src = "";
+                if (data.audioQueue.length > 0) {
+                    const nextAudio = data.audioQueue.shift();
+                    data.audioElement.src = nextAudio;
+                    data.audioElement.play();
+                    data.audioPlaying = true;
+                }
+            });
         },
         enqueue: function(videoURL) {
             data.mediaQueue.push(videoURL);
-        }
+        },
+        enqueueAudio: function(audioURL) {
+            data.audioQueue.push(audioURL);
+
+            if (data.audioQueue.length === 1 && !data.audioPlaying) {
+                data.audioQueue.shift();
+                data.audioElement.src = audioURL;
+                data.audioElement.play().catch((error) => {
+                    console.error("Error playing audio:", error);
+                });
+                data.audioPlaying = true;
+            }
+        },
     };
 }
