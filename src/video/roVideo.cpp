@@ -4,12 +4,11 @@
 int main( const int numArgs, const char** args) {
 
     roServer server;
-    //server.load_fsm();
-    server.load_custom_fsm();
-    //server.load_graph();
+    server.load_models();
     server.add_route_get("/", "scripts/index.txt");
-    server.add_route_get("/api/fsm/:id", "scripts/fsm.txt");
-    server.add_route_get("/api/fsm-list/", "scripts/fsm-list.txt");
+    server.add_route_get("/api/fsm/:model/:id", "scripts/fsm.txt");
+    server.add_route_get("/api/fsm-list/:model", "scripts/fsm-list.txt");
+    server.add_route_get("/api/model-list", "scripts/model-list.txt");
     server.add_route_get("/api/event/next/:id", "scripts/event.txt");
     server.add_route_get("/api/event/latest", "scripts/event-latest.txt");
     server.add_route_post("/api/event", "scripts/event-post.txt");
@@ -18,7 +17,6 @@ int main( const int numArgs, const char** args) {
     //server.add_directory("/js", "bootstrap-4.3.1-dist/js");
     server.add_directory("/jquery", "jquery");
     server.add_directory("/js", "js");
-    server.add_directory("/video", "/home/adam/.AI/Desktop/Romia/Video-Wan-2.2/Frags");
     server.add_directory("/audio", "audio");
     server.start(7777);
 

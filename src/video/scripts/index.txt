@@ -13,6 +13,7 @@ write("</head>");
 write("<body>");
 
 write("<video id='video'></video>");
+write("<div><select id='select-models'></select></div>");
 write("<div><select id='select-fsms'></select></div>");
 write("<div><select id='select-state'></select></div>");
 write("<div id='div-timeline'></div>");

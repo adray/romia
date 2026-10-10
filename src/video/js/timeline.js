@@ -38,12 +38,26 @@ function createTimeline() {
         },
         update: function(time) {
             timeline.time = time;
+            // Remove any videos that have ended
+            while (timeline.videos.length > 0 && timeline.videos[0].time + timeline.videos[0].clipLength <= timeline.time) {
+                timeline.videos.shift();
+                if (timeline.videoPointer > 0) {
+                    timeline.videoPointer--;
+                }
+            }
+            // Remove any audio events that have passed
+            while (timeline.audio.length > 0 && timeline.audio[0].time <= timeline.time) {
+                timeline.audio.shift();
+                if (timeline.audioPointer > 0) {
+                    timeline.audioPointer--;
+                }
+            }
         },
         getNextVideo: function() {
             if (timeline.videoPointer < timeline.videos.length) {
                 var clip = timeline.videos[timeline.videoPointer++];
                 clip.buffered = true;
-                return clip.video;
+                return { video: clip.video, time: clip.time, clipLength: clip.clipLength };
             }
             return null;
         },

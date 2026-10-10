@@ -1,0 +1,247 @@
+{
+    "base_prompt": "Opulent, expensive, extravagant, indoors, {0}, camera tracking.",
+    "clips": [
+        {
+            "prompt_parameters": ["she is in a neutral pose"],
+            "category": "idle",
+            "emotion": "neutral",
+            "action": "none",
+            "speaking": false,
+            "duration": 3,
+            "workflow": {
+                "type": "firstLastFrameToVideo",
+                "parameters": {
+                    "frame": "base_image",
+                    "duration": "duration"
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is in a neutral pose"],
+            "category": "idle",
+            "emotion": "neutral",
+            "action": "none",
+            "speaking": false,
+            "duration": 3,
+            "workflow": {
+                "type": "firstLastFrameToVideo",
+                "parameters": {
+                    "startVideo": "output_video",
+                    "endVideo": "output_video",
+                    "use_image": false,
+                    "duration": "duration"
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is speaking"],
+            "category": "speaking",
+            "emotion": "neutral",
+            "action": "none",
+            "speaking": true,
+            "workflow": {
+                "type": "imageToVideo",
+                "parameters": {
+                    "frame": "base_image"
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is speaking"],
+            "category": "speaking",
+            "emotion": "neutral",
+            "action": "none",
+            "speaking": true,
+            "workflow": {
+                "type": "firstLastFrameToVideo",
+                "parameters": {
+                    "startVideo": "output_video",
+                    "endVideo": "output_video",
+                    "use_image": false
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is clapping"],
+            "category": "clap",
+            "emotion": "neutral",
+            "action": "clap",
+            "workflow": {
+                "type": "imageToVideo",
+                "parameters": {
+                    "frame": "base_image"
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is clapping"],
+            "category": "clap",
+            "emotion": "neutral",
+            "action": "clap",
+            "workflow": {
+                "type": "firstLastFrameToVideo",
+                "parameters": {
+                    "startVideo": "output_video",
+                    "endVideo": "output_video",
+                    "use_image": false
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she looks annoyed"],
+            "category": "annoyed",
+            "emotion": "annoyed",
+            "action": "none",
+            "workflow": {
+                "type": "imageToVideo",
+                "parameters": {
+                    "frame": "base_image"
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she looks annoyed"],
+            "category": "annoyed",
+            "emotion": "annoyed",
+            "action": "none",
+            "workflow": {
+                "type": "firstLastFrameToVideo",
+                "parameters": {
+                    "startVideo": "output_video",
+                    "endVideo": "output_video",
+                    "use_image": false
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is laughing"],
+            "category": "laugh",
+            "emotion": "laugh",
+            "action": "none",
+            "workflow": {
+                "type": "imageToVideo",
+                "parameters": {
+                    "frame": "base_image"
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is laughing"],
+            "category": "laugh",
+            "emotion": "laugh",
+            "action": "none",
+            "workflow": {
+                "type": "firstLastFrameToVideo",
+                "parameters": {
+                    "startVideo": "output_video",
+                    "endVideo": "output_video",
+                    "use_image": false
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is surprised"],
+            "category": "surprised",
+            "emotion": "surprised",
+            "action": "none",
+            "workflow": {
+                "type": "imageToVideo",
+                "parameters": {
+                    "frame": "base_image"
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is surprised"],
+            "category": "surprised",
+            "emotion": "surprised",
+            "action": "none",
+            "workflow": {
+                "type": "firstLastFrameToVideo",
+                "parameters": {
+                    "startVideo": "output_video",
+                    "endVideo": "output_video",
+                    "use_image": false
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she looks sad"],
+            "category": "sad",
+            "emotion": "sad",
+            "action": "none",
+            "workflow": {
+                "type": "imageToVideo",
+                "parameters": {
+                    "frame": "base_image"
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she looks sad"],
+            "category": "sad",
+            "emotion": "sad",
+            "action": "none",
+            "workflow": {
+                "type": "firstLastFrameToVideo",
+                "parameters": {
+                    "startVideo": "output_video",
+                    "endVideo": "output_video",
+                    "use_image": false
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is playing with her hair happily"],
+            "category": "playing_with_hair",
+            "emotion": "happy",
+            "action": "playing_with_hair",
+            "workflow": {
+                "type": "imageToVideo",
+                "parameters": {
+                    "frame": "base_image"
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is playing with her hair happily"],
+            "category": "playing_with_hair",
+            "emotion": "happy",
+            "action": "playing_with_hair",
+            "workflow": {
+                "type": "firstLastFrameToVideo",
+                "parameters": {
+                    "startVideo": "output_video",
+                    "endVideo": "output_video",
+                    "use_image": false
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is pumping her fist in victory"],
+            "category": "victory",
+            "emotion": "happy",
+            "action": "victory",
+            "workflow": {
+                "type": "imageToVideo",
+                "parameters": {
+                    "frame": "base_image"
+                }
+            }
+        },
+        {
+            "prompt_parameters": ["she is pumping her fist in victory"],
+            "category": "victory",
+            "emotion": "happy",
+            "action": "victory",
+            "workflow": {
+                "type": "firstLastFrameToVideo",
+                "parameters": {
+                    "startVideo": "output_video",
+                    "endVideo": "output_video",
+                    "use_image": false
+                }
+            }
+        }
+    ]
+}

@@ -39,17 +39,19 @@ def build_prompt(base_prompt, clips):
         prompt = prompt.replace(f"{{{value}}}", str(clips[value]))
     return prompt
 
-def generate_jobs(base_prompt, clips):
+def generate_jobs(base_prompt, negative_prompt, clips):
     jobs = []
     for clip in clips:
         prompt = build_prompt(base_prompt, clip["prompt_parameters"])
         jobs.append({
             "prompt": prompt,
+            "negative": negative_prompt,
             "workflow": clip["workflow"],
             "category": clip["category"],
             "action": clip["action"],
             "emotion": clip["emotion"],
             "speaking": clip.get("speaking", False),
+            "duration": clip.get("duration", 5),
             "state": "pending",
             "client_id": str(uuid.uuid4()),
         })
@@ -73,22 +75,30 @@ def load_jobs(jobs_path):
         data = json.load(f)
         return data.get("jobs", [])
 
-def process_job(server, job, workflows, input_image, start_video, end_video):
+def process_job(server, job, workflows, input_image, start_video, end_video, output_video):
     workflow_name = job.get("workflow").get("type")
     workflow_item = workflows.get(workflow_name)
     if workflow_item is None:
         print(f"Workflow '{workflow_name}' not found for job: {job['prompt']}")
         job["state"] = "error"
         return
-    workflow = patch_workflow(
+    start_video_path = Path(start_video).name if start_video else None
+    end_video_path = Path(end_video).name if end_video else None
+    output_video_path = Path(output_video).name if output_video else None
+    input_image_path = Path(input_image).name if input_image else None
+    workflow, inputs = patch_workflow(
         job,
         copy.deepcopy(workflow_item),
-        Path(input_image).name if input_image else None,
-        Path(start_video).name if start_video else None,
-        Path(end_video).name if end_video else None)
-    if workflow is None:
+        input_image_path,
+        start_video_path,
+        end_video_path,
+        output_video_path)
+    if workflow is None or inputs is None:
         job["state"] = "error"
         return
+    for input_name in inputs:
+        if input_name == "output_video":
+            upload_file(server, output_video)
     #Debug: save the patched workflow to a file
     #with open("debug_workflow.json", "w", encoding='utf-8') as f:
     #    json.dump(workflow, f, indent=4)
@@ -101,7 +111,8 @@ def process_job(server, job, workflows, input_image, start_video, end_video):
             if "images" in entry["outputs"][node_id]:
                 items = entry["outputs"][node_id]["images"]
                 for image in items:
-                    images.append(image["filename"])
+                    if image["filename"] != start_video_path and image["filename"] != end_video_path:
+                        images.append(image["filename"])
         job["output"] = images
 
 def patch_node(workflow, id, nodeClass, inputName, value):
@@ -118,16 +129,21 @@ def patch_node(workflow, id, nodeClass, inputName, value):
             success = True
     return success
 
-def patch_workflow(job, workflow_item, input_image, start_video, end_video):
+def patch_workflow(job, workflow_item, input_image, start_video, end_video, output_video):
     job_params = job.get("workflow").get("parameters", {})
     prompt = job.get("prompt")
     workflow = workflow_item.get("workflow")
+    inputs = []
     for job_param in job_params:
         for parameter in workflow_item.get("parameters", []):
             parameterName = parameter.get("parameter")
             success = False
             if parameterName == "prompt":
                 success = patch_node(workflow, parameter.get("id"), parameter.get("name"), parameter.get("input"), prompt)
+            elif parameterName == "negative":
+                value = job.get("negative", None)
+                if value is not None or value != "":
+                    success = patch_node(workflow, parameter.get("id"), parameter.get("name"), parameter.get("input"), value)
             elif parameterName == job_param:
                 value = job_params[job_param]
                 if value == "base_image":
@@ -136,13 +152,18 @@ def patch_workflow(job, workflow_item, input_image, start_video, end_video):
                     value = start_video
                 elif value == "end_video":
                     value = end_video
+                elif value == "output_video":
+                    inputs.append("output_video")
+                    value = output_video
+                elif value == "duration":
+                    value = job.get("duration", 5)
                 success = patch_node(workflow, parameter.get("id"), parameter.get("name"), parameter.get("input"), value)
             else:
                 continue
             if not success:
                 print(f"Failed to patch parameter '{parameterName}' for job: {job['prompt']}")
                 return None
-    return workflow
+    return workflow, inputs
 
 def submit_prompt(server: str, workflow: dict, client_id: str) -> str:
     resp = requests.post(f"{server}/prompt", json={"prompt": workflow, "client_id": client_id})
@@ -185,6 +206,18 @@ def upload_file(server: str, file_path: str) -> str:
         raise RuntimeError(f"Failed to upload file: {resp.text}")
     return resp.json()["name"]
 
+def download_file(server: str, file_name: str, output_path: str):
+    resp = requests.get(f"{server}/api/view?filename={file_name}&type=output&subfolder=video", stream=True)
+    if not resp.ok:
+        try:
+            print("Server error response:", json.dumps(resp.json(), indent=2, ensure_ascii=False))
+        except ValueError:
+            print("Server error response (non-JSON):", resp.text)
+    resp.raise_for_status()
+    with open(output_path, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            f.write(chunk)
+
 def load_clip_metadata(file_path: str) -> dict:
     if not os.path.exists(file_path):
         return {}
@@ -194,6 +227,12 @@ def load_clip_metadata(file_path: str) -> dict:
 def save_clip_metadata(metadata: dict, file_path: str):
     with open(file_path, "w") as f:
         json.dump(metadata, f, indent=2, ensure_ascii=False)
+
+def normalize_clip_duration(duration: float) -> float:
+    # Quantize the duration to the nearest frame at 16fps
+    fps = 16.0
+    num_frames = (duration * fps + 1) // 1
+    return (num_frames / fps) * 1000.0
 
 def main():
 
@@ -264,6 +303,18 @@ def main():
                 "id": "150",
                 "input": "value",
                 "parameter": "use_image"
+            },
+            {
+                "name": "PrimitiveFloat",
+                "id": "28",
+                "input": "value",
+                "parameter": "duration"
+            },
+            {
+                "name": "CLIPTextEncode",
+                "id": "4",
+                "input": "text",
+                "parameter": "negative"
             }
         ],
     }
@@ -282,6 +333,18 @@ def main():
                 "input": "text",
                 "parameter": "prompt"
             },
+            {
+                "name": "PrimitiveFloat",
+                "id": "129:161",
+                "input": "value",
+                "parameter": "duration"
+            },
+            {
+                "name": "CLIPTextEncode",
+                "id": "129:89",
+                "input": "text",
+                "parameter": "negative"
+            }
         ],
     }
     
@@ -301,8 +364,9 @@ def main():
                 print(f"Error: there are still pending jobs in {jobs_dir}. Use --resume to continue.")
                 return
         base_prompt = video_config.get("base_prompt", "")
+        negative_prompt = video_config.get("negative", "")
         clips = video_config.get("clips", [])
-        jobs = generate_jobs(base_prompt, clips)
+        jobs = generate_jobs(base_prompt, negative_prompt, clips)
         save_jobs(jobs, jobs_dir)
 
     if not jobs:
@@ -310,30 +374,52 @@ def main():
         return
 
     server = args.server
-    if start_video and  os.path.exists(start_video):
-        upload_file(server, start_video)
-    if end_video and os.path.exists(end_video):
-        upload_file(server, end_video)
-    if input_image and os.path.exists(input_image):
-        upload_file(server, input_image)
+    if start_video:
+        if os.path.exists(start_video):
+            upload_file(server, start_video)
+        else:
+            print(f"Error: start video {start_video} does not exist.")
+            return
+    if end_video:
+        if os.path.exists(end_video):
+            upload_file(server, end_video)
+        else:
+            print(f"Error: end video {end_video} does not exist.")
+            return
+    if input_image:
+        if os.path.exists(input_image):
+            upload_file(server, input_image)
+        else:
+            print(f"Error: input image {input_image} does not exist.")
+            return
 
     num_jobs = len(jobs)
+    output_video = None
     for i, job in enumerate(jobs, start=1):
         state = job.get("state", "pending")
         if state == "pending":
             print(f"Processing job {i}/{num_jobs} {job['prompt']}")
-            process_job(server, job, workflows, input_image, start_video, end_video)
+            process_job(server, job, workflows, input_image, start_video, end_video, output_video)
             if "output" in job:
                 for video in job["output"]:
                     metadata[video] = {
                         "prompt": job["prompt"],
+                        "negative": job.get("negative", ""),
                         "category": job.get("category", ""),
                         "emotion": job.get("emotion", ""),
                         "speaking": job.get("speaking", False),
                         "action": job.get("action", ""),
+                        "duration": normalize_clip_duration(job.get("duration", 5))
                     }
+                    output_video_path = output_directory + "/" + video
+                    download_file(server, video, output_video_path)
+                    output_video = output_video_path
             save_jobs(jobs, jobs_dir)
             save_clip_metadata(metadata, metadata_path)
+        elif state == "done":
+            if "output" in job:
+                for video in job["output"]:
+                    output_video =  output_directory + "/" + video
 
 if __name__ == "__main__":
     main()

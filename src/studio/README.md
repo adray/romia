@@ -6,7 +6,8 @@ python -m venv .venv
 
 ## Video Generation
 
-python ./batch_video.py <image> ../models/romia --workflow ../config/video.json
+./batch_video.py --image <image> ../models/romia --workflow ../config/bulk_image_to_video.json
+./batch_video.py --start-video ~/.AI/Desktop/Romia/Video-Wan-2.2/Wan2.2_i2v_00571_.mp4 --end-video ~/.AI/Desktop/Romia/Video-Wan-2.2/Wan2.2_i2v_00571_.mp4 --workflow ../config/single_thread_videos.json ../models/romia/
 
 ## Extracting frames
 
@@ -56,4 +57,7 @@ python ./batch_frame_captions.py --clusters clusters.json --workflow clip_vision
 
 ./build_approvals.py --frames-root ./batch_queue --out approvals.json
 
+# Negative
+"negative": "low quality, blurry, low resolution, low lighting, low detail, low contrast, deformed, distorted, poorly rendered, jewellery, watches, expensive accessories",
+    
 

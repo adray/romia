@@ -1,0 +1,6 @@
+
+setContentType("text/json");
+
+var models = listModels();
+write(models);
+

@@ -13,6 +13,7 @@ function createPlaybackEngine() {
         audioPlaying: false,
         sourceBuffer: undefined,
         callback: undefined,
+        wakeLock: undefined,
         requestMore: async function () {
             if (data.callback !== undefined &&
                 data.mediaQueue.length == 0) {
@@ -35,7 +36,7 @@ function createPlaybackEngine() {
             });
             
             if (data.mediaQueue.length > 0) {
-                data.appendClip(data.mediaQueue.shift());
+                data.appendClip(data.mediaQueue.shift().video);
             }
         },
         appendClip: async function(clipName) {
@@ -58,7 +59,7 @@ function createPlaybackEngine() {
             }
 
             if (data.mediaQueue.length > 0 && !data.sourceBuffer.updating) {
-                data.appendClip(data.mediaQueue.shift());
+                data.appendClip(data.mediaQueue.shift().video);
             }
         },
     };
@@ -80,9 +81,24 @@ function createPlaybackEngine() {
                 data.audioElement.play().catch((error) => {
                     console.error("Error playing audio:", error);
                 });
+
+                if ("wakeLock" in navigator) {
+                    navigator.wakeLock.request("screen").then((wakeLock) => {
+                        data.wakeLock = wakeLock;
+                    }).catch((error) => {
+                        console.error("Error acquiring wake lock:", error);
+                    });
+                }
             });
             video.addEventListener("pause", () => {
                 data.audioElement.pause();
+                if (data.wakeLock) {
+                    data.wakeLock.release().then(() => {
+                        data.wakeLock = undefined;
+                    }).catch((error) => {
+                        console.error("Error releasing wake lock:", error);
+                    });
+                }
             });
             data.audioElement.addEventListener('ended', () => {
                 data.audioPlaying = false;
@@ -95,8 +111,8 @@ function createPlaybackEngine() {
                 }
             });
         },
-        enqueue: function(videoURL) {
-            data.mediaQueue.push(videoURL);
+        enqueue: function(video) {
+            data.mediaQueue.push(video);
         },
         enqueueAudio: function(audioURL) {
             data.audioQueue.push(audioURL);

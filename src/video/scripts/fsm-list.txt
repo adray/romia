@@ -1,7 +1,8 @@
 
 setContentType("text/json");
 
-var fsm = listFSM();
+var id = getArgInt("model");
+var fsm = listFSM(id);
 write(fsm);
 
 

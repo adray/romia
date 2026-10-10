@@ -39,6 +39,21 @@ function populateFsms(fsm) {
     });
 }
 
+function populateModels(fsm) {
+    var items = fsm.data.models;
+    var optionElements = [];
+
+    $.each(items, function(_, value) {
+        optionElements.push('<option value="' + value.id + '">' + value.name + '</option>');
+    });
+
+    $('#select-models').html(optionElements.join(''));
+    $('#select-models').on('change', function (e) {
+        var valueSelected = this.value;
+        fsm.changeModel(valueSelected);
+    });
+}
+
 function pushMessage(msg) {
     $('#div-message').html(msg);
 }
@@ -48,25 +63,28 @@ function pushMessage(msg) {
 //
 
 function createCoordinator(fsm) {
-    const clipLengthMilliseconds = 5062.5; // 81 frames at 16fps
     const timeline = createTimeline();
     const engine = createPlaybackEngine();
     const voice = createEventListener((data) => {
         for (var i = 0; i < data.events.length; i++) {
             const event = data.events[i];
             if (event.type === "update" || event.type === "audio") {
-                fsm.update(event.state, event.interrupt);
-                // Fill in clips until the FSM reaches the next state
-                const nextState = fsm.getNextState();
-                var time = timeline.getEndTime();
-                while (fsm.getCurrentState() !== nextState) {
-                    const clip = fsm.next();
-                    time = timeline.addVideo(clip, clipLengthMilliseconds) + clipLengthMilliseconds;
+                if (fsm.update(event.state, event.interrupt)) {
+                    // Fill in clips until the FSM reaches the next state
+                    const nextState = fsm.getNextState();
+                    var time = timeline.getEndTime();
+                    while (fsm.getCurrentState() !== nextState) {
+                        const clip = fsm.next();
+                        const duration = clip.duration;
+                        time = timeline.addVideo(clip.file, duration) + duration;
+                    }
+                    // Now, add the audio if present
+                    if (event.type === "audio") {
+                        timeline.addAudio(event.data, time);
+                    }
                 }
-                // Now, add the audio if present
-                if (event.type === "audio") {
-                    timeline.addAudio(event.data, time);
-                }
+            } else if (event.type === "fsm") {
+                fsm.changeFsm(event.data);
             }
         }
     });
@@ -79,7 +97,8 @@ function createCoordinator(fsm) {
             var clip = timeline.getNextVideo();
             if (!clip) {
                 // If no clip is available, request the FSM to provide the next clip
-                timeline.addVideo(fsm.next(), clipLengthMilliseconds);
+                const next = fsm.next();
+                timeline.addVideo(next.file, next.duration);
                 clip = timeline.getNextVideo();
             }
 
@@ -107,15 +126,19 @@ function createCoordinator(fsm) {
 };
 
 
-const fsm = createFSM((initialized) => {
-    populateState(fsm);
-    if (initialized) {
-        populateFsms(fsm);
+const fsm = createFSM(() => {
+        populateModels(fsm);
         const coordinator = createCoordinator(fsm);
         coordinator.engine.start(() => {
             // Enqueue new clip(s)
             coordinator.fetchNextClip();
-        });   
+        });
+    },
+    () => {
+        populateState(fsm);
+    }, 
+    () => {
+        populateFsms(fsm);
     }
-});
+);
 

@@ -4,20 +4,38 @@
 
 "use strict";
 
-function createFSM(callback) {
+function createFSM(onInitialCreate, onFsmChanged, onModelChanged) {
     var data = {
+        model: 0,
         state: 0,
         path: 0,
         clip: 0,
         loop: 0,
         next: undefined,
         interrupt: false,
+        models: undefined,
         machine: undefined,
         fsms: undefined,
         initialized: false,
-        callback: callback,
+        modelChanged: false,
+        onInitialCreate: onInitialCreate,
+        onFsmChanged: onFsmChanged,
+        onModelChanged: onModelChanged,
         init: function() {
-            fetch("/api/fsm-list/").then((res) => {
+            fetch("/api/model-list").then((res) => {
+                return res.json();
+            })
+            .then((res) => {
+                data.models = res.models;
+                if (data.models.length > 0) {
+                    data.model = 0;
+                    data.modelChanged = true;
+                    data.listFsm(data.model);
+                }
+            });
+        },
+        listFsm: function(id) {
+            fetch("/api/fsm-list/" + id).then((res) => {
                 return res.json();
             })
             .then((res) => {
@@ -27,16 +45,32 @@ function createFSM(callback) {
             });
         },
         loadFsm: function(id) {
-            fetch("/api/fsm/" + id).then((res) => {
+            fetch("/api/fsm/" + data.model + "/" + id).then((res) => {
                     return res.json();
                 })
                 .then((res) => {
                     data.machine = res;
-                    if (data.callback !== undefined) {
-                        data.callback(!data.initialized);
+                    data.fsmChanged();
+                    if (data.modelChanged && data.onModelChanged !== undefined) {
+                        data.onModelChanged();
+                        data.modelChanged = false;
+                    }
+                    if (data.onInitialCreate !== undefined && data.initialized === false) {
+                        data.onInitialCreate();
                         data.initialized = true;
                     } 
                 });
+        },
+        fsmChanged: function() {
+            data.state = 0;
+            data.path = 0;
+            data.clip = 0;
+            data.loop = 0;
+            data.next = undefined;
+            data.interrupt = false;     
+            if (data.onFsmChanged !== undefined) {
+                data.onFsmChanged();
+            }
         },
         chooseNextState: function(state) {
             var candidates = []
@@ -121,11 +155,11 @@ function createFSM(callback) {
         },
         changeFsm: function(id) {
             data.loadFsm(id);
-
-            data.state = 0;
-            data.path = 0;
-            data.clip = 0;
-            data.loop = 0;
+        },
+        changeModel: function(id) {
+            data.model = id;
+            data.modelChanged = true;
+            data.listFsm(id);
         },
         update: function(state, interrupt) {
             // look up the state name in the fsm to find the id
@@ -138,10 +172,13 @@ function createFSM(callback) {
                 }
             }
 
+            var ok = false;
             if (stateId !== null) {
                 data.next = stateId;
                 data.interrupt = interrupt;
+                ok = true;
             }
+            return ok;
         }
     };
 }

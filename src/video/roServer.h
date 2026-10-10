@@ -46,6 +46,20 @@ struct roFSM {
     std::vector<roState> states;
 };
 
+struct roMetadata {
+    std::string file;
+    double duration;
+};
+
+struct roModel {
+    std::string name;
+    std::string clipDir;
+    std::vector<roFSM> _fsms;
+    std::vector<roGroup> _groups;
+    std::unordered_map<std::string, roMetadata> _metadata;
+    std::unordered_map<std::string, int> _map;
+};
+
 struct roAudioQueue {
     int tail;
 
@@ -65,12 +79,10 @@ class roServer {
         void add_route_get(const std::string& url, const std::string& script);
         void add_route_post(const std::string& url, const std::string& script);
         void add_directory(const std::string& url, const std::string& dir);
-        void load_fsm();
-        void load_custom_fsm();
-        void load_model();
-        void load_graph();
-        std::string getFSM(const int id) const;
-        std::string listFSM() const;
+        void load_models();
+        std::string getFSM( const int model, const int id) const;
+        std::string listFSM(const int model) const;
+        std::string listModels() const;
     
         std::string uploadAudio(const std::string& body);
 
@@ -79,13 +91,15 @@ class roServer {
         std::string getEventLatest() const;
 
     private:
+        void load_custom_fsm(roModel& model, const std::string& fsm_file);
+        void load_metadata(roModel& model, const std::string& metadata_file);
+        void load_fsm(roModel& model, const std::string& fsm_file);
+
+        /*void load_graph();*/
 
         roAudioQueue _audioQueue;
-        std::vector<roFSM> _fsms;
-        std::vector<roGroup> _groups;
+        std::vector<roModel> _models;
         std::vector<roRoute> _routes;
         std::vector<roEvent> _events;
         std::vector<roDirectory> _dirs;
-        //std::vector<roVideoLibrary> _library;
-        std::unordered_map<std::string, int> _map;
 };
