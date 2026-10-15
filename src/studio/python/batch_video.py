@@ -8,6 +8,7 @@ import argparse
 import requests
 import time
 import uuid
+import random
 from pathlib import Path
 
 '''
@@ -157,6 +158,8 @@ def patch_workflow(job, workflow_item, input_image, start_video, end_video, outp
                     value = output_video
                 elif value == "duration":
                     value = job.get("duration", 5)
+                elif value == "random_seed":
+                    value = random.randint(0, 2**32 - 1)
                 success = patch_node(workflow, parameter.get("id"), parameter.get("name"), parameter.get("input"), value)
             else:
                 continue
@@ -218,13 +221,13 @@ def download_file(server: str, file_name: str, output_path: str):
         for chunk in resp.iter_content(chunk_size=8192):
             f.write(chunk)
 
-def load_clip_metadata(file_path: str) -> dict:
+def load_json(file_path: str) -> dict:
     if not os.path.exists(file_path):
         return {}
     with open(file_path, "r") as f:
         return json.load(f)
 
-def save_clip_metadata(metadata: dict, file_path: str):
+def save_json(metadata: dict, file_path: str):
     with open(file_path, "w") as f:
         json.dump(metadata, f, indent=2, ensure_ascii=False)
 
@@ -244,11 +247,13 @@ def main():
     ap.add_argument("--resume", action="store_true", help="Resume from existing jobs")
     ap.add_argument("--server", default="http://127.0.0.1:8188", help="URL of the server")
     ap.add_argument("--workflow", help="Path to the workflow JSON file")
+    ap.add_argument("--name", help="Name of the state machine")
     args = ap.parse_args()
 
     input_image = args.image
     start_video = args.start_video
     end_video = args.end_video
+    name = args.name
     output_directory = args.output_directory
     resume = args.resume
 
@@ -262,7 +267,8 @@ def main():
 
     workflow_files = {
         "image_start_end_workflow": "../workflows/wan-image-start-end-to-video.json",
-        "image_to_video_workflow": "../workflows/video_wan2_2_14B_i2v.json"
+        "image_to_video_workflow": "../workflows/video_wan2_2_14B_i2v.json",
+        "video_to_video_workflow": "../workflows/wan-video-to-video-no-motion.json"
     }
 
     workflow_data = {}
@@ -315,6 +321,12 @@ def main():
                 "id": "4",
                 "input": "text",
                 "parameter": "negative"
+            },
+            {
+                "name": "KSamplerAdvanced",
+                "id": "17",
+                "input": "noise_seed",
+                "parameter": "seed"
             }
         ],
     }
@@ -344,12 +356,56 @@ def main():
                 "id": "129:89",
                 "input": "text",
                 "parameter": "negative"
+            },
+            {
+                "name": "KSamplerAdvanced",
+                "id": "129:86",
+                "input": "noise_seed",
+                "parameter": "seed"
+            }
+        ],
+    }
+    workflows["videoToVideo"] = {
+        "workflow": workflow_data["video_to_video_workflow"],
+        "parameters": [
+            {
+                "name": "LoadVideo",
+                "id": "176",
+                "input": "file",
+                "parameter": "startVideo"
+            },
+            {
+                "name": "CLIPTextEncode",
+                "id": "179:93",
+                "input": "text",
+                "parameter": "prompt"
+            },
+            {
+                "name": "PrimitiveFloat",
+                "id": "179:161",
+                "input": "value",
+                "parameter": "duration"
+            },
+            {
+                "name": "CLIPTextEncode",
+                "id": "179:89",
+                "input": "text",
+                "parameter": "negative"
+            },
+            {
+                "name": "KSamplerAdvanced",
+                "id": "179:86",
+                "input": "noise_seed",
+                "parameter": "seed"
             }
         ],
     }
     
     metadata_path = os.path.join(output_directory, "metadata.json")
-    metadata = load_clip_metadata(metadata_path)
+    metadata = load_json(metadata_path)
+
+    manifest_path = os.path.join(output_directory, "manifest.json")
+    manifest_data = load_json(manifest_path)
 
     jobs = []
     jobs_dir = os.path.join(output_directory, "jobs.json")
@@ -372,6 +428,27 @@ def main():
     if not jobs:
         print("No jobs to process.")
         return
+
+    if name:
+        state_machine_file = manifest_data.get("fsm")
+        state_machine = load_json(os.path.join(output_directory, state_machine_file))
+        # Find the state machine node corresponding to the given name
+        state_machine_node = None
+        for node in state_machine.get("fsms", []):
+            if node.get("name") == name:
+                state_machine_node = node
+                break
+        if not state_machine_node:
+            print(f"Error: state machine node with name {name} not found.")
+            return
+        initial_state = state_machine_node.get("initial_state")
+        state_machine_state = state_machine_node.get("states", [])[initial_state]
+        state_machine_clip_paths = state_machine_state.get("paths", [])
+        clips = state_machine_clip_paths[0].get("clips", []) if state_machine_clip_paths else []
+        # Pre-populate the video parameters
+        clip_path = manifest_data.get("clipDirRaw")
+        start_video = os.path.join(clip_path, clips[len(clips) - 1]) if clips else ""
+        end_video = os.path.join(clip_path, clips[0]) if clips else ""
 
     server = args.server
     if start_video:
@@ -415,7 +492,7 @@ def main():
                     download_file(server, video, output_video_path)
                     output_video = output_video_path
             save_jobs(jobs, jobs_dir)
-            save_clip_metadata(metadata, metadata_path)
+            save_json(metadata, metadata_path)
         elif state == "done":
             if "output" in job:
                 for video in job["output"]:

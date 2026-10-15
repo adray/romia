@@ -82,6 +82,9 @@ function createCoordinator(fsm) {
                     if (event.type === "audio") {
                         timeline.addAudio(event.data, time);
                     }
+                } else {
+                    // Error handling if the FSM did not update successfully
+                    console.error("FSM update failed for event:", event);
                 }
             } else if (event.type === "fsm") {
                 fsm.changeFsm(event.data);

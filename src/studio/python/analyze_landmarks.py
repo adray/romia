@@ -139,11 +139,60 @@ def probe_pose(poses, probe, model_dir):
     predictions = evaluate_model(clip_average, clip_min, clip_max, model)
     print(f"Pose Predictions: {predictions}")
 
+def render_output(face):
+    from mediapipe.tasks.python.vision import drawing_utils
+    from mediapipe.tasks.python.vision import drawing_styles
+    import mediapipe as mp
+    from mediapipe.tasks.python import vision
+    image = mp.Image.create_from_file(face["image"])
+    image_data = image.numpy_view()
+    annotated_image = image_data.copy()
+
+    face_landmarks = []
+    # Render the face landmarks to the output path
+    for landmark in face["result"]["face_landmarks"]:
+        x = landmark.get("x")
+        y = landmark.get("y")
+        z = landmark.get("z")
+        face_landmarks.append(mp.tasks.components.containers.NormalizedLandmark(x=x, y=y, z=z))
+
+    drawing_utils.draw_landmarks(
+        image=annotated_image,
+        landmark_list=face_landmarks,
+        connections=vision.FaceLandmarksConnections.FACE_LANDMARKS_TESSELATION,
+        landmark_drawing_spec=None,
+        connection_drawing_spec=drawing_styles.get_default_face_mesh_tesselation_style())
+    drawing_utils.draw_landmarks(
+        image=annotated_image,
+        landmark_list=face_landmarks,
+        connections=vision.FaceLandmarksConnections.FACE_LANDMARKS_CONTOURS,
+        landmark_drawing_spec=None,
+        connection_drawing_spec=drawing_styles.get_default_face_mesh_contours_style())
+    drawing_utils.draw_landmarks(
+        image=annotated_image,
+        landmark_list=face_landmarks,
+        connections=vision.FaceLandmarksConnections.FACE_LANDMARKS_LEFT_IRIS,
+        landmark_drawing_spec=None,
+        connection_drawing_spec=drawing_styles.get_default_face_mesh_iris_connections_style())
+    drawing_utils.draw_landmarks(
+        image=annotated_image,
+        landmark_list=face_landmarks,
+        connections=vision.FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_IRIS,
+        landmark_drawing_spec=None,
+        connection_drawing_spec=drawing_styles.get_default_face_mesh_iris_connections_style())
+        
+    output_path = f"{face['image']}"
+    output_path = output_path.replace(".png", "_data.png")
+
+    import cv2
+    cv2.imwrite(output_path, cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model-dir", type=str, help="Path to the model directory containing the .keras file")
     ap.add_argument("--probe", type=str, help="Optional video to probe")
-    ap.add_argument("-out-json", type=str, default="states.json", help="Path to write states.json")
+    ap.add_argument("--render", type=str, help="Optional video to render")
     args = ap.parse_args()
 
     faces = []
@@ -152,6 +201,10 @@ def main():
     poses = []
     with open(os.path.join(args.model_dir, "poses.json"), "r") as f:
         poses = json.load(f)
+    if args.render is not None:
+        for face in faces:
+            if face['image'].startswith(args.render):
+                render_output(face)
     if args.probe is None:
         analyze_faces(faces)
     else:

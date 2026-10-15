@@ -204,8 +204,8 @@ def main():
     )
     ap.add_argument("fsm", type=Path, help="Path to the FSM JSON (e.g. romia_custom_fsm.json)")
     ap.add_argument("hashes", type=Path, help="Path to the hashes JSON produced by video_phash.py")
-    ap.add_argument("--threshold", type=int, default=6,
-                     help="Max Hamming distance for a transition to count as smooth (default: 6)")
+    ap.add_argument("--threshold", type=int, default=3,
+                     help="Max Hamming distance for a transition to count as smooth (default: 3)")
     ap.add_argument("-o", "--output", type=Path, default=None,
                      help="Optional path to write a detailed JSON report")
     args = ap.parse_args()

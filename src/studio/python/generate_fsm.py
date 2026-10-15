@@ -133,10 +133,13 @@ def get_fan_out_nodes(clip_analysis, group):
     fan_out_nodes = analysis.get("fan_out_groups", {}).get(group["id"], [])
     return fan_out_nodes
 
-def generate_idle_loop(root_state, clip_analysis):
+def generate_idle_loop(root_state, clip_analysis, fan_out_loops):
     paths = []
     clips = [root_state]
     transitions = []
+    for loop in fan_out_loops:
+        if loop["name"] == "secondary":
+            transitions.append(loop["id"])
     paths.append({
         "clips": clips,
         "transition": transitions
@@ -152,11 +155,10 @@ def generate_idle_loop(root_state, clip_analysis):
 def generate_fan_out_loops(root_state, clip_analysis, metadata):
     initial_group = search_graph(clip_analysis, root_state)
     fan_out_nodes = get_fan_out_nodes(clip_analysis, initial_group)
-    states = []
+    paths = []
     for node in fan_out_nodes:
         if node == root_state:
             continue
-        paths = []
         clip_metadata = metadata.get(node, {})
         clips = [node]
         next_group = search_graph(clip_analysis, node)
@@ -173,24 +175,35 @@ def generate_fan_out_loops(root_state, clip_analysis, metadata):
                     break
 
         transitions = [0]
-        paths.append({
+        paths.append((clip_metadata, {
             "clips": clips,
             "transition": transitions
-        })
-        states.append({
-            "name": clip_metadata.get("category"),
-            "id": len(states) + 1,
-            "loop": False,
-            "loop_count": 0,
-            "paths": paths
-        })
+        }))
+
+    # Allocate paths to states by creating a state for each unique category in the fan-out loops
+    states = []
+    states_by_category = {}
+    for clip_metadata, path in paths:
+        category = clip_metadata.get("category")
+        if category not in states_by_category:
+            states_by_category[category] = {
+                "name": category,
+                "id": len(states_by_category) + 1,
+                "loop": False,
+                "loop_count": 0,
+                "paths": []
+            }
+        states_by_category[category]["paths"].append(path)
+
+    states = list(states_by_category.values())
     return states
 
 def generate_fsms(metadata, root_states, fsm_grouping, clip_analysis):
     data = {}
     fsms = []
     for root_state in root_states:
-        states = [generate_idle_loop(root_state, clip_analysis)] + generate_fan_out_loops(root_state, clip_analysis, metadata)
+        fan_out_loops = generate_fan_out_loops(root_state, clip_analysis, metadata)
+        states = [generate_idle_loop(root_state, clip_analysis, fan_out_loops)] + fan_out_loops
         fsms.append({
             "name": "default",
             "initial_state": 0,

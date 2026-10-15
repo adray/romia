@@ -30,7 +30,10 @@ https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_
 
 sudo ./.venv/bin/python ./face_landmarker.py --root-dir ~/.AI/Frames/ -out-json ../models/romia/faces.json
 sudo ./.venv/bin/python ./pose_landmarker.py --root-dir ~/.AI/Frames/ -out-json ../models/romia/poses.json
-./.venv/bin/python ./analyze_landmarks.py --model-dir ../models/romia/ -out-json ../models/romia/states.json
+./.venv/bin/python ./analyze_landmarks.py --model-dir ../models/romia/
+
+# FSM gen
+python ./generate_fsm.py ../models/romia --clip_analysis output.json
 
 # Remux
 # Transform the videos into the right format to be streamed.

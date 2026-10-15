@@ -46,7 +46,7 @@ function createTimeline() {
                 }
             }
             // Remove any audio events that have passed
-            while (timeline.audio.length > 0 && timeline.audio[0].time <= timeline.time) {
+            while (timeline.audio.length > 0 && timeline.audio[0].time + 10000 <= timeline.time) {
                 timeline.audio.shift();
                 if (timeline.audioPointer > 0) {
                     timeline.audioPointer--;
