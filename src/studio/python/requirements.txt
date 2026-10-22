@@ -6,3 +6,5 @@ numpy
 transformers
 scikit-learn
 mediapipe
+pydot
+tensorboard

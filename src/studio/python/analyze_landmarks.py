@@ -139,7 +139,7 @@ def probe_pose(poses, probe, model_dir):
     predictions = evaluate_model(clip_average, clip_min, clip_max, model)
     print(f"Pose Predictions: {predictions}")
 
-def render_output(face):
+def render_output(face, pose):
     from mediapipe.tasks.python.vision import drawing_utils
     from mediapipe.tasks.python.vision import drawing_styles
     import mediapipe as mp
@@ -180,7 +180,25 @@ def render_output(face):
         connections=vision.FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_IRIS,
         landmark_drawing_spec=None,
         connection_drawing_spec=drawing_styles.get_default_face_mesh_iris_connections_style())
-        
+    
+    pose_landmarks = []
+    for landmark in pose["result"]["pose_landmarks"]:
+        x = landmark.get("x")
+        y = landmark.get("y")
+        z = landmark.get("z")
+        visibility = landmark.get("visibility")
+        presence = landmark.get("presence")
+        pose_landmarks.append(mp.tasks.components.containers.NormalizedLandmark(x=x, y=y, z=z, visibility=visibility, presence=presence))
+  
+    pose_landmark_style = drawing_styles.get_default_pose_landmarks_style()
+    pose_connection_style = drawing_utils.DrawingSpec(color=(0, 255, 0), thickness=2)
+    drawing_utils.draw_landmarks(
+        image=annotated_image,
+        landmark_list=pose_landmarks,
+        connections=vision.PoseLandmarksConnections.POSE_LANDMARKS,
+        landmark_drawing_spec=pose_landmark_style,
+        connection_drawing_spec=pose_connection_style)
+
     output_path = f"{face['image']}"
     output_path = output_path.replace(".png", "_data.png")
 
@@ -202,10 +220,11 @@ def main():
     with open(os.path.join(args.model_dir, "poses.json"), "r") as f:
         poses = json.load(f)
     if args.render is not None:
-        for face in faces:
+        zip_faces_poses = list(zip(faces, poses))
+        for face, pose in zip_faces_poses:
             if face['image'].startswith(args.render):
-                render_output(face)
-    if args.probe is None:
+                render_output(face, pose)
+    elif args.probe is None:
         analyze_faces(faces)
     else:
         probe_face(faces, args.probe, args.model_dir)
