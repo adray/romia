@@ -14,6 +14,7 @@ function createPlaybackEngine() {
         sourceBuffer: undefined,
         callback: undefined,
         wakeLock: undefined,
+        track: undefined,
         requestMore: async function () {
             if (data.callback !== undefined &&
                 data.mediaQueue.length == 0) {
@@ -62,6 +63,11 @@ function createPlaybackEngine() {
                 data.appendClip(data.mediaQueue.shift().video);
             }
         },
+        showSubtitle: function(text, durationMs) {
+            const start = video.currentTime;
+            const end = start + durationMs / 1000;
+            data.track.addCue(new VTTCue(start, end, text));
+        }
     };
 
     return {
@@ -72,6 +78,9 @@ function createPlaybackEngine() {
             const video = document.querySelector("video");
             video.src = url;
             video.addEventListener("timeupdate", () => data.checkBufferHealth());
+
+            data.track = video.addTextTrack('subtitles', 'English', 'en');
+            data.track.mode = 'showing';
 
             data.callback = callback;
             data.mediaSource.addEventListener("sourceopen", data.onSourceOpen);
@@ -125,6 +134,9 @@ function createPlaybackEngine() {
                 });
                 data.audioPlaying = true;
             }
+        },
+        enqueueSubtitle: function(subtitle) {
+            data.showSubtitle(subtitle, 5000); // Show for 5 seconds or adjust as needed
         },
     };
 }

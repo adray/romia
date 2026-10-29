@@ -12,7 +12,8 @@
                 "type": "firstLastFrameToVideo",
                 "parameters": {
                     "frame": "base_image",
-                    "duration": "duration"
+                    "duration": "duration",
+                    "seed": "random_seed"
                 }
             }
         },
@@ -29,7 +30,8 @@
                     "startVideo": "output_video",
                     "endVideo": "output_video",
                     "use_image": false,
-                    "duration": "duration"
+                    "duration": "duration",
+                    "seed": "random_seed"
                 }
             }
         },
@@ -42,7 +44,8 @@
             "workflow": {
                 "type": "imageToVideo",
                 "parameters": {
-                    "frame": "base_image"
+                    "frame": "base_image",
+                    "seed": "random_seed"
                 }
             }
         },
@@ -57,7 +60,8 @@
                 "parameters": {
                     "startVideo": "output_video",
                     "endVideo": "output_video",
-                    "use_image": false
+                    "use_image": false,
+                    "seed": "random_seed"
                 }
             }
         },
@@ -69,7 +73,8 @@
             "workflow": {
                 "type": "imageToVideo",
                 "parameters": {
-                    "frame": "base_image"
+                    "frame": "base_image",
+                    "seed": "random_seed"
                 }
             }
         },
@@ -83,7 +88,8 @@
                 "parameters": {
                     "startVideo": "output_video",
                     "endVideo": "output_video",
-                    "use_image": false
+                    "use_image": false,
+                    "seed": "random_seed"
                 }
             }
         },
@@ -95,7 +101,8 @@
             "workflow": {
                 "type": "imageToVideo",
                 "parameters": {
-                    "frame": "base_image"
+                    "frame": "base_image",
+                    "seed": "random_seed"
                 }
             }
         },
@@ -109,7 +116,8 @@
                 "parameters": {
                     "startVideo": "output_video",
                     "endVideo": "output_video",
-                    "use_image": false
+                    "use_image": false,
+                    "seed": "random_seed"
                 }
             }
         },
@@ -121,7 +129,8 @@
             "workflow": {
                 "type": "imageToVideo",
                 "parameters": {
-                    "frame": "base_image"
+                    "frame": "base_image",
+                    "seed": "random_seed"
                 }
             }
         },
@@ -135,7 +144,8 @@
                 "parameters": {
                     "startVideo": "output_video",
                     "endVideo": "output_video",
-                    "use_image": false
+                    "use_image": false,
+                    "seed": "random_seed"
                 }
             }
         },
@@ -147,7 +157,8 @@
             "workflow": {
                 "type": "imageToVideo",
                 "parameters": {
-                    "frame": "base_image"
+                    "frame": "base_image",
+                    "seed": "random_seed"
                 }
             }
         },
@@ -161,7 +172,8 @@
                 "parameters": {
                     "startVideo": "output_video",
                     "endVideo": "output_video",
-                    "use_image": false
+                    "use_image": false,
+                    "seed": "random_seed"
                 }
             }
         },
@@ -173,7 +185,8 @@
             "workflow": {
                 "type": "imageToVideo",
                 "parameters": {
-                    "frame": "base_image"
+                    "frame": "base_image",
+                    "seed": "random_seed"
                 }
             }
         },
@@ -187,7 +200,8 @@
                 "parameters": {
                     "startVideo": "output_video",
                     "endVideo": "output_video",
-                    "use_image": false
+                    "use_image": false,
+                    "seed": "random_seed"
                 }
             }
         },
@@ -199,7 +213,8 @@
             "workflow": {
                 "type": "imageToVideo",
                 "parameters": {
-                    "frame": "base_image"
+                    "frame": "base_image",
+                    "seed": "random_seed"
                 }
             }
         },
@@ -213,7 +228,8 @@
                 "parameters": {
                     "startVideo": "output_video",
                     "endVideo": "output_video",
-                    "use_image": false
+                    "use_image": false,
+                    "seed": "random_seed"
                 }
             }
         },
@@ -225,7 +241,8 @@
             "workflow": {
                 "type": "imageToVideo",
                 "parameters": {
-                    "frame": "base_image"
+                    "frame": "base_image",
+                    "seed": "random_seed"
                 }
             }
         },
@@ -239,7 +256,8 @@
                 "parameters": {
                     "startVideo": "output_video",
                     "endVideo": "output_video",
-                    "use_image": false
+                    "use_image": false,
+                    "seed": "random_seed"
                 }
             }
         }

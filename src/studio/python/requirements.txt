@@ -8,3 +8,5 @@ scikit-learn
 mediapipe
 pydot
 tensorboard
+tf2onnx
+onnxruntime

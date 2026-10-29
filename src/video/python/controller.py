@@ -58,12 +58,15 @@ def controller_choose_event(fsm, state_filter=None):
     }
     return event
 
-def controller_choose_fsm(fsms):
-    import random
+def controller_choose_fsm(fsms, filter=None):
+    mapping = {fsm["name"]: i for i, fsm in enumerate(fsms)}
+    if filter is not None:
+        fsms = [fsm for fsm in fsms if fsm["name"] in filter]
     if not fsms:
         return None
-    selected_fsm = random.choice(range(len(fsms)))
-    return selected_fsm
+    import random
+    selected_fsm = random.choice(fsms)
+    return mapping[selected_fsm["name"]]
 
 def controller_send_fsm(fsm_id):
     event = {
@@ -101,6 +104,7 @@ def controller_choose_audio(audio_manifest, dialogue_text):
 def load_stage(script, script_stage_index):
     stage = script.get("stages")[script_stage_index]
     states = stage.get("states", [])
+    fsm = stage.get("fsm", None)
     dialogues = stage.get("dialogues", [])
     dialogue_strategy = stage.get("dialogue_strategy", "sequential")
 
@@ -111,6 +115,7 @@ def load_stage(script, script_stage_index):
     return {
         "stage": stage,
         "states": states,
+        "fsm": fsm,
         "dialogues": dialogues,
         "dialogue_strategy": dialogue_strategy,
         "transition": transition,
@@ -162,7 +167,11 @@ def advanced_controller_loop(fsms, script):
     dialogue_index = 0
     dialogue_count = 0
     stage_data = load_stage(script, script_stage_index)
-
+    initial_fsm_id = controller_choose_fsm(fsms, stage_data.get("fsm", None))
+    if initial_fsm_id is not None:
+        print("Initial FSM selected:", initial_fsm_id)
+        controller_state["current_fsm"] = initial_fsm_id
+        controller_send_fsm(initial_fsm_id)
 
     while True:
         fsm = fsms[controller_state["current_fsm"]]
@@ -170,13 +179,13 @@ def advanced_controller_loop(fsms, script):
         if elapsed_time >= FSM_CUT_TIME:
             start_time = time.time()
             # Implement FSM transition logic here
-            new_fsm_id = controller_choose_fsm(fsms)
+            new_fsm_id = controller_choose_fsm(fsms, stage_data.get("fsm", None))
             if new_fsm_id is not None:
                 print("Switching to new FSM:", new_fsm_id)
                 controller_state["current_fsm"] = new_fsm_id
                 controller_send_fsm(new_fsm_id)
         event_elapsed_time = time.time() - event_start_time
-        if event_elapsed_time >= EVENT_TIME:
+        if event_elapsed_time >= EVENT_TIME and transition_timer is None:
             event_start_time = time.time()
             # Implement event triggering logic here
             event = controller_choose_event(fsm, stage_data["states"])
@@ -184,15 +193,16 @@ def advanced_controller_loop(fsms, script):
                 print("Triggering event:", event)
                 post_event(event)
         audio_elapsed_time = time.time() - audio_start_time
-        if audio_elapsed_time >= AUDIO_TIME:
+        if audio_elapsed_time >= AUDIO_TIME and transition_timer is None:
             audio_start_time = time.time()
+            text, dialogue_index = controller_choose_dialogue(stage_data, dialogue_index)
+            post_event({"type": "subtitle", "data": text, "state": "speaking"})
             if audio_manifest is not None:
-                text, dialogue_index = controller_choose_dialogue(stage_data, dialogue_index)
                 audio = controller_choose_audio(audio_manifest, text)
                 if audio is not None:
                     print("Triggering audio:", audio)
                     post_event(audio)
-        if stage_data["transition_type"] == "auto" and dialogue_index == len(stage_data["dialogues"]) - 1 and transition_timer is None:
+        if stage_data["transition_type"] == "auto" and dialogue_index == len(stage_data["dialogues"]) and transition_timer is None:
             transition_timer = time.time() + STAGE_TIME
         elif stage_data["transition_type"] == "dialogue" and dialogue_index == stage_data["transition_count"] and transition_timer is None:
             transition_timer = time.time() + STAGE_TIME
@@ -201,6 +211,8 @@ def advanced_controller_loop(fsms, script):
                 transition_timer = None
                 # Increment stage index and load the next stage
                 script_stage_index += 1
+                dialogue_index = 0
+                dialogue_count = 0
                 if script_stage_index < len(script.get("stages", [])):
                     stage_data = load_stage(script, script_stage_index)
                 else:

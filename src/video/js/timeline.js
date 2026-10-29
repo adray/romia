@@ -9,16 +9,22 @@ function createTimeline() {
     var timeline = {
         audio: [],
         videos: [],
+        subtitles: [],
         time: 0,
         audioPointer: 0,
         videoPointer: 0,
+        subtitlePointer: 0,
         addAudio: function(event, time) {
             timeline.audio.push({event: event, time: time});
+        },
+        addSubtitle: function(subtitle, time) {
+            timeline.subtitles.push({subtitle: subtitle, time: time});
         },
         addVideo: function(video, clipLength) {
             var time = timeline.time;
             if (timeline.videos.length > 0) {
-                time = timeline.videos[timeline.videos.length - 1].time + clipLength;
+                const lastClip = timeline.videos[timeline.videos.length - 1];
+                time = lastClip.time + lastClip.clipLength;
                 if (time < timeline.time) {
                     console.warn("Timeline time is ahead of the calculated video time.");
                 }
@@ -71,6 +77,16 @@ function createTimeline() {
             }
             return null;
         },
+        getNextSubtitle: function() {
+            if (timeline.subtitlePointer < timeline.subtitles.length) {
+                var subtitle = timeline.subtitles[timeline.subtitlePointer];
+                if (timeline.time >= subtitle.time) {
+                    timeline.subtitlePointer++;
+                    return subtitle.subtitle;
+                }
+            }
+            return null;
+        },
         render: function() {
             // This function can be used to render the timeline visually
             var html = "<div class='timeline'>"; 
@@ -95,6 +111,12 @@ function createTimeline() {
                 var audio = timeline.audio[i];
                 if (audio.time >= timeline.time) {
                     html += "<div>Audio: " + audio.event + " at " + audio.time + "ms</div>";
+                }
+            }
+            for (var i = 0; i < timeline.subtitles.length; i++) {
+                var subtitle = timeline.subtitles[i];
+                if (subtitle.time >= timeline.time) {
+                    html += "<div>Subtitle: " + subtitle.subtitle + " at " + subtitle.time + "ms</div>";
                 }
             }
             html += "</div>";

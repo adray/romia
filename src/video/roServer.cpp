@@ -243,6 +243,7 @@ void roServer::load_models() {
 
                 if (ok) {
                     add_directory("/video/" + model.name, model.clipDir);
+                    add_directory("/gan/" + model.name, dir.path().string() + "/gan/");
 
                     std::cout << "Loaded model: " << model.name << std::endl;
                     _models.push_back(std::move(model));
@@ -396,6 +397,11 @@ std::string roServer::listFSM(const int model) const {
 }
 
 std::string roServer::getFSM(const int model, const int id) const {
+    if (model < 0 || model >= static_cast<int>(_models.size()) || id < 0 ||
+        id >= static_cast<int>(_models[model]._fsms.size())) {
+        return "{}";
+    }
+
     json fsm;
 
     for (auto& state : _models[model]._fsms[id].states) {
@@ -443,8 +449,7 @@ std::string roServer::uploadAudio(const std::string& body) {
 
     json response;
 
-    const int id = _audioQueue.tail;
-    _audioQueue.tail++;
+    const int id = _audioQueue.tail.fetch_add(1);
     
     const std::string audioPath = "audio/audio_" + std::to_string(id);
     std::fstream file(audioPath, std::ios::out | std::ios::binary);
@@ -463,7 +468,7 @@ std::string roServer::uploadAudio(const std::string& body) {
 
 
 std::string roServer::postEvent(const roEvent& event){ 
-    if (event.type != "audio" && event.type != "update" && event.type != "fsm") {
+    if (event.type != "audio" && event.type != "update" && event.type != "fsm" && event.type != "subtitle") {
         json response;
         response["status"] = "error";
         response["message"] = "Invalid event type";
@@ -476,6 +481,13 @@ std::string roServer::postEvent(const roEvent& event){
         response["message"] = "Audio event must have data";
         return response.dump();
     }
+    
+    if (event.type == "subtitle" && event.data.empty()) {
+        json response;
+        response["status"] = "error";
+        response["message"] = "Subtitle event must have data";
+        return response.dump();
+    }
 
     if (event.type == "fsm" && event.data.empty()) {
         json response;
@@ -484,13 +496,17 @@ std::string roServer::postEvent(const roEvent& event){
         return response.dump();
     }
 
-    _events.push_back(event);
+    {
+        std::lock_guard<std::mutex> lock(_eventsMutex);
+        _events.push_back(event);
+    }
     json response;
     response["status"] = "ok";
     return response.dump();
 }
 
 std::string roServer::getEventNext(const int pos) const {
+    std::lock_guard<std::mutex> lock(_eventsMutex);
     int id = pos;
 
     json response;
@@ -516,6 +532,7 @@ std::string roServer::getEventNext(const int pos) const {
 }
 
 std::string roServer::getEventLatest() const {
+    std::lock_guard<std::mutex> lock(_eventsMutex);
     json response;
     response["next_id"] = static_cast<int>(_events.size());
     response["status"] = "ok";

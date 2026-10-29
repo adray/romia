@@ -68,7 +68,7 @@ function createCoordinator(fsm) {
     const voice = createEventListener((data) => {
         for (var i = 0; i < data.events.length; i++) {
             const event = data.events[i];
-            if (event.type === "update" || event.type === "audio") {
+            if (event.type === "update" || event.type === "audio" || event.type === "subtitle") {
                 if (fsm.update(event.state, event.interrupt)) {
                     // Fill in clips until the FSM reaches the next state
                     const nextState = fsm.getNextState();
@@ -78,9 +78,11 @@ function createCoordinator(fsm) {
                         const duration = clip.duration;
                         time = timeline.addVideo(clip.file, duration) + duration;
                     }
-                    // Now, add the audio if present
+                    // Now, add the audio or subtitle if present
                     if (event.type === "audio") {
                         timeline.addAudio(event.data, time);
+                    } else if (event.type === "subtitle") {
+                        timeline.addSubtitle(event.data, time);
                     }
                 } else {
                     // Error handling if the FSM did not update successfully
@@ -112,12 +114,19 @@ function createCoordinator(fsm) {
             if (audio) {
                 engine.enqueueAudio(audio);
             }
+        },
+        playNextSubtitle: function() {
+            var subtitle = timeline.getNextSubtitle();
+            if (subtitle) {
+                engine.enqueueSubtitle(subtitle);
+            }
         }
     };
 
     const timeUpdate = function() {
         timeline.update(video.currentTime * 1000);
         coordinator.playNextAudio();
+        coordinator.playNextSubtitle();
         $('#div-timeline').html(timeline.render());
     };
 

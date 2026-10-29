@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <atomic>
+#include <mutex>
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -61,7 +63,7 @@ struct roModel {
 };
 
 struct roAudioQueue {
-    int tail;
+    std::atomic<int> tail;
 
     roAudioQueue() : tail(0) {}
 };
@@ -98,6 +100,7 @@ class roServer {
         /*void load_graph();*/
 
         roAudioQueue _audioQueue;
+        mutable std::mutex _eventsMutex;
         std::vector<roModel> _models;
         std::vector<roRoute> _routes;
         std::vector<roEvent> _events;

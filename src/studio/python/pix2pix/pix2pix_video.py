@@ -21,15 +21,15 @@ def load(video_set):
 
   # The second element gets encoded into the alpha channel and the reference image into RGB
   path = video_set[1]
-  alpha_frame = tf.io.read_file(path)
-  alpha_frame = tf.io.decode_png(alpha_frame, channels=4)
-  alpha_frame = tf.cast(alpha_frame, tf.float32)
-  #reference_image_path = video_set[2]
-  #reference_image = tf.io.read_file(reference_image_path)
-  #reference_image = tf.io.decode_png(reference_image, channels=3)
-  #reference_image = tf.cast(reference_image, tf.float32)
-  #source_frame = tf.concat([reference_image, alpha_frame[:, :, :1]], axis=-1)
-  source_frame = alpha_frame
+  face_frame = tf.io.read_file(path)
+  face_frame = tf.io.decode_png(face_frame, channels=3)
+  face_frame = tf.cast(face_frame, tf.float32)
+  reference_image_path = video_set[2]
+  reference_image = tf.io.read_file(reference_image_path)
+  reference_image = tf.io.decode_png(reference_image, channels=3)
+  reference_image = tf.cast(reference_image, tf.float32)
+  source_frame = tf.concat([face_frame, reference_image[:, :, :1]], axis=-1)
+  #source_frame = face_frame
 
   return source_frame, target_frame
 
@@ -348,21 +348,79 @@ def run_inference(test_dataset, generator, video_path=None):
         generate_images(generator, inp, tar)
         skip(iterator, 40)
 
+def export_model(generator):
+  # Keras 3 (TF >= 2.16):
+  generator.export(args.export_path)
+
+def load_dataset(dataset_path):
+  training_dir = PATH / "train"
+  testing_dir = PATH / "test"
+
+  # The dataset is split into train and test directories - containing 2 images: face and source image per pair
+  training_videos = []
+  testing_videos = []
+  fps = 16
+  for video_dir in training_dir.iterdir():
+    if video_dir.is_dir():
+      files = sorted(video_dir.glob("*.png"))
+      for i in range(len(files) // 2):
+        training_videos.append((str(files[i*2]), str(files[i*2+1]), str(files[0])))
+
+  for video_dir in testing_dir.iterdir():
+    if video_dir.is_dir():
+      files = sorted(video_dir.glob("*.png"))
+      for i in range(len(files) // 2):
+        testing_videos.append((str(files[i*2]), str(files[i*2+1]), str(files[0])))
+
+  # training_videos is a list of (str, str) tuples (convert with str() as before)
+  train_paths = tf.constant(training_videos)   # shape [N, 3], dtype string
+  test_paths  = tf.constant(testing_videos)
+
+  train_dataset = (
+      tf.data.Dataset.from_tensor_slices(train_paths)
+      .shuffle(len(training_videos))           # shuffle cheap path strings, before decoding
+      .map(load_image_train, num_parallel_calls=tf.data.AUTOTUNE)
+      .batch(BATCH_SIZE)
+      .prefetch(tf.data.AUTOTUNE)
+  )
+
+  test_dataset = (
+      tf.data.Dataset.from_tensor_slices(test_paths)
+      .map(load_image_test, num_parallel_calls=tf.data.AUTOTUNE)
+      .batch(BATCH_SIZE)
+  )
+  return train_dataset, test_dataset
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset_path', type=str, required=True, help='Path to the dataset')
-parser.add_argument('--train', action='store_true', help='Flag to indicate training mode')
-parser.add_argument('--inference', action='store_true', help='Flag to indicate inference mode')
 parser.add_argument('--memory_limit', type=int, default=8192, help='Memory limit for GPU in MB')
-parser.add_argument('--video', action='store', type=str, help='Whether inference should produce a video output and the path to save it if enabled')
-parser.add_argument("--reference-image", type=str, help="Path to the reference image")
 parser.add_argument("--dev", action='store_true', help="Flag to indicate development mode")
-parser.add_argument("--num-steps", type=int, default=20000, help="Number of steps for training")
+subparsers = parser.add_subparsers(help="Sub-commands for training, inference, and export")
+
+# Sub-parser for export command
+export_parser = subparsers.add_parser("export", help="Export the model to ONNX format")
+export_parser.add_argument('--export-path', type=str, required=True, help='Path to save the exported ONNX model')
+
+# Sub-parser for training command
+train_parser = subparsers.add_parser("train", help="Train the model")
+train_parser.add_argument("--num-steps", type=int, default=20000, help="Number of steps for training")
+train_parser.add_argument('--dataset_path', dest='train_dataset_path', type=str, required=True, help='Path to the dataset')
+
+# Sub-parser for inference command
+inference_parser = subparsers.add_parser("inference", help="Run inference with the model")
+inference_parser.add_argument('--video', action='store', type=str, help='Whether inference should produce a video output and the path to save it if enabled')
+inference_parser.add_argument('--dataset_path', dest='inference_dataset_path', type=str, required=True, help='Path to the dataset')
+
 args = parser.parse_args()
-training = args.train
-inference = args.inference
+training = hasattr(args, 'train_dataset_path') and args.num_steps is not None
+inference = hasattr(args, 'inference_dataset_path') and args.video is not None
+export = hasattr(args, 'export_path') and args.export_path is not None
 dev = args.dev
-reference_image = args.reference_image
+dataset_path = None
+if training:
+  dataset_path = args.train_dataset_path
+elif inference:
+  dataset_path = args.inference_dataset_path
+
 
 if training and (args.num_steps < 1 or args.num_steps % 1000 != 0):
     raise ValueError("Number of steps must be a positive multiple of 1000.")
@@ -378,43 +436,9 @@ tf.config.experimental.set_virtual_device_configuration(
   [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=args.memory_limit)]
 )
 
-PATH = pathlib.Path(args.dataset_path)
-training_dir = PATH / "train"
-testing_dir = PATH / "test"
-
-# The dataset is split into train and test directories - containing 2 images: face and source image per pair
-training_videos = []
-testing_videos = []
-fps = 16
-for video_dir in training_dir.iterdir():
-  if video_dir.is_dir():
-    files = sorted(video_dir.glob("*.png"))
-    for i in range(len(files) // 2):
-      training_videos.append((str(files[i*2]), str(files[i*2+1]), reference_image))
-
-for video_dir in testing_dir.iterdir():
-  if video_dir.is_dir():
-    files = sorted(video_dir.glob("*.png"))
-    for i in range(len(files) // 2):
-      testing_videos.append((str(files[i*2]), str(files[i*2+1]), reference_image))
-
-# training_videos is a list of (str, str) tuples (convert with str() as before)
-train_paths = tf.constant(training_videos)   # shape [N, 3], dtype string
-test_paths  = tf.constant(testing_videos)
-
-train_dataset = (
-    tf.data.Dataset.from_tensor_slices(train_paths)
-    .shuffle(len(training_videos))           # shuffle cheap path strings, before decoding
-    .map(load_image_train, num_parallel_calls=tf.data.AUTOTUNE)
-    .batch(BATCH_SIZE)
-    .prefetch(tf.data.AUTOTUNE)
-)
-
-test_dataset = (
-    tf.data.Dataset.from_tensor_slices(test_paths)
-    .map(load_image_test, num_parallel_calls=tf.data.AUTOTUNE)
-    .batch(BATCH_SIZE)
-)
+if training or inference:
+  PATH = pathlib.Path(dataset_path)
+  train_dataset, test_dataset = load_dataset(dataset_path)
 
 generator = Generator()
 loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
@@ -446,12 +470,14 @@ if __name__ == "__main__":
         summary_writer = tf.summary.create_file_writer(
         log_dir + "fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
         fit(train_dataset, steps=args.num_steps)
-    elif args.inference:
+    elif inference:
       if args.video:
         # Run the trained model on a few examples from the test set and produce a video output
         run_inference(test_dataset, generator, video_path=args.video)
       else:
         # Run the trained model on a few examples from the test set
         run_inference(test_dataset, generator)
+    elif export:
+        export_model(generator)
 
 

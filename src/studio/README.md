@@ -8,6 +8,7 @@ python -m venv .venv
 
 ./batch_video.py --image <image> ../models/romia --workflow ../config/bulk_image_to_video.json
 ./batch_video.py --start-video ~/.AI/Desktop/Romia/Video-Wan-2.2/Wan2.2_i2v_00571_.mp4 --end-video ~/.AI/Desktop/Romia/Video-Wan-2.2/Wan2.2_i2v_00571_.mp4 --workflow ../config/single_thread_videos.json ../models/romia/
+./batch_video.py --name idle --workflow ../config/custom.json ../models/romia
 
 ## Extracting frames
 

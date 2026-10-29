@@ -1,0 +1,40 @@
+
+setContentType("text/html");
+
+write("<!doctype html>");
+write("<html lang='en'>");
+write("<head>");
+write("<meta charset='utf-8'>");
+write("<meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no' >");
+//write("<link rel='stylesheet' href='/css/bootstrap.css'/>");
+//write("<link rel='stylesheet' href='/styles.css'/>");
+write("</head>");
+write("<body>");
+
+write("<img id='gan-img'></img>");
+write("<img id='landmarks-img'></img>");
+write("<img id='diff-img'></img>");
+write("<div><select id='select-models'></select></div>");
+write("<div><select id='select-fsms'></select></div>");
+write("<div><select id='select-state'></select></div>");
+write("<div id='div-timeline'></div>");
+
+// CPU
+//write("<script src='https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js'></script>");
+
+// GPU
+write("<script src='https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.webgpu.min.js'></script>");
+
+write("<script src='/jquery/jquery-3.7.1.slim.min.js'></script>");
+//write("<script src='/js/bootstrap.bundle.js'></script>");
+//write("<script src='/js/timeline.js'></script>");
+//write("<script src='/js/playback.js'></script>");
+//write("<script src='/js/fsm.js'></script>");
+//write("<script src='/js/event.js'></script>");
+//write("<script src='/js/video.js'></script>");
+write("<script src='/js/inference.js'></script>");
+
+write("</body>");
+write("</html>");
+
+
