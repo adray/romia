@@ -23,10 +23,10 @@ write("<div id='div-timeline'></div>");
 
 write("<script src='/jquery/jquery-3.7.1.slim.min.js'></script>");
 //write("<script src='/js/bootstrap.bundle.js'></script>");
-write("<script src='/js/timeline.js'></script>");
-write("<script src='/js/playback.js'></script>");
-write("<script src='/js/fsm.js'></script>");
-write("<script src='/js/event.js'></script>");
+write("<script src='/player/timeline.js'></script>");
+write("<script src='/player/playback.js'></script>");
+write("<script src='/player/fsm.js'></script>");
+write("<script src='/player/event.js'></script>");
 write("<script src='/js/video.js'></script>");
 
 write("</body>");

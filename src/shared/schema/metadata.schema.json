@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Avatar model clip metadata",
+  "description": "metadata.json: an object keyed by the original clip file name (e.g. 'Wan2.2_i2v_00571_.mp4'). The packaged file in clipDir is '<stem>frag.mp4'.",
+  "type": "object",
+  "minProperties": 1,
+  "propertyNames": {
+    "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]*\\.mp4$"
+  },
+  "additionalProperties": { "$ref": "#/$defs/clip" },
+  "$defs": {
+    "clip": {
+      "type": "object",
+      "required": ["category"],
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "description": "Clip category, e.g. 'idle'. Idle clips become root states in generate_fsm.py.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "action": { "type": "string", "maxLength": 64 },
+        "emotion": { "type": "string", "maxLength": 64 },
+        "speaking": { "type": "boolean", "default": false },
+        "duration": {
+          "description": "Clip duration in MILLISECONDS (batch_video.py quantizes to 16fps, e.g. 5062.5 for 81 frames).",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 60000
+        },
+        "prompt": { "type": "string", "maxLength": 4000 },
+        "negative": { "type": "string", "maxLength": 4000 }
+      }
+    }
+  }
+}

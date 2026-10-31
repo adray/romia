@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Avatar model manifest",
+  "description": "manifest.json at the root of a packaged avatar model. Clip data lives in the metadata file; the state machine lives in the fsm file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "clipDir", "fsm", "metadata"],
+  "properties": {
+    "schema_version": {
+      "description": "Manifest format version. Treated as 1 when omitted.",
+      "type": "integer",
+      "const": 1,
+      "default": 1
+    },
+    "name": {
+      "description": "URL-safe model name. Used in URL paths (/video/<name>/...), so no spaces or dots.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "version": {
+      "description": "Optional semantic version of the model.",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "clipDir": {
+      "description": "Directory inside the package that holds the fragmented clips. package_model.py sets this to 'clip'.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*$",
+      "default": "clip"
+    },
+    "fsm": {
+      "description": "File name of the FSM JSON, at the package root.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-][A-Za-z0-9_.-]*\\.json$"
+    },
+    "metadata": {
+      "description": "File name of the clip metadata JSON, at the package root.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-][A-Za-z0-9_.-]*\\.json$"
+    },
+    "thumbnail": {
+      "description": "File name of the thumbnail image, at the package root.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-][A-Za-z0-9_.-]*\\.(jpg|jpeg|png)$"
+    }
+  }
+}

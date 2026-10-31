@@ -18,6 +18,7 @@ int main( const int numArgs, const char** args) {
     //server.add_directory("/js", "bootstrap-4.3.1-dist/js");
     server.add_directory("/jquery", "jquery");
     server.add_directory("/js", "js");
+    server.add_directory("/player", "../shared/player");
     server.add_directory("/css", "css");
     server.add_directory("/audio", "audio");
     server.start(7777);
